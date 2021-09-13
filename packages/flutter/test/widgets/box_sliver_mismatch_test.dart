@@ -1,18 +1,18 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('Sliver in a box', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const DecoratedBox(
-        decoration: BoxDecoration(),
+      DecoratedBox(
+        decoration: const BoxDecoration(),
         child: SliverList(
-          delegate: SliverChildListDelegate(<Widget>[]),
+          delegate: SliverChildListDelegate(const <Widget>[]),
         ),
       ),
     );
@@ -20,10 +20,10 @@ void main() {
     expect(tester.takeException(), isFlutterError);
 
     await tester.pumpWidget(
-      new Row(
-        children: const <Widget>[
+      Row(
+        children: <Widget>[
           SliverList(
-            delegate: SliverChildListDelegate(<Widget>[]),
+            delegate: SliverChildListDelegate(const <Widget>[]),
           ),
         ],
       ),
@@ -34,9 +34,9 @@ void main() {
 
   testWidgets('Box in a sliver', (WidgetTester tester) async {
     await tester.pumpWidget(
-      new Viewport(
+      Viewport(
         crossAxisDirection: AxisDirection.right,
-        offset: new ViewportOffset.zero(),
+        offset: ViewportOffset.zero(),
         slivers: const <Widget>[
           SizedBox(),
         ],
@@ -46,9 +46,9 @@ void main() {
     expect(tester.takeException(), isFlutterError);
 
     await tester.pumpWidget(
-      new Viewport(
+      Viewport(
         crossAxisDirection: AxisDirection.right,
-        offset: new ViewportOffset.zero(),
+        offset: ViewportOffset.zero(),
         slivers: const <Widget>[
           SliverPadding(
             padding: EdgeInsets.zero,

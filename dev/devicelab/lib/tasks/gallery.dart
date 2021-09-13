@@ -1,82 +1,162 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
-import '../framework/adb.dart';
+import '../framework/devices.dart';
 import '../framework/framework.dart';
-import '../framework/ios.dart';
+import '../framework/task_result.dart';
 import '../framework/utils.dart';
 
-TaskFunction createGalleryTransitionTest({ bool semanticsEnabled = false }) {
-  return new GalleryTransitionTest(semanticsEnabled: semanticsEnabled);
+TaskFunction createGalleryTransitionTest({bool semanticsEnabled = false}) {
+  return GalleryTransitionTest(semanticsEnabled: semanticsEnabled);
+}
+
+TaskFunction createGalleryTransitionE2ETest({bool semanticsEnabled = false}) {
+  return GalleryTransitionTest(
+    testFile: semanticsEnabled
+        ? 'transitions_perf_e2e_with_semantics'
+        : 'transitions_perf_e2e',
+    needFullTimeline: false,
+    timelineSummaryFile: 'e2e_perf_summary',
+    transitionDurationFile: null,
+    timelineTraceFile: null,
+    driverFile: 'transitions_perf_e2e_test',
+  );
+}
+
+TaskFunction createGalleryTransitionHybridTest({bool semanticsEnabled = false}) {
+  return GalleryTransitionTest(
+    semanticsEnabled: semanticsEnabled,
+    driverFile: semanticsEnabled
+        ? 'transitions_perf_hybrid_with_semantics_test'
+        : 'transitions_perf_hybrid_test',
+  );
 }
 
 class GalleryTransitionTest {
 
-  GalleryTransitionTest({ this.semanticsEnabled = false });
+  GalleryTransitionTest({
+    this.semanticsEnabled = false,
+    this.testFile = 'transitions_perf',
+    this.needFullTimeline = true,
+    this.timelineSummaryFile = 'transitions.timeline_summary',
+    this.timelineTraceFile = 'transitions.timeline',
+    this.transitionDurationFile = 'transition_durations.timeline',
+    this.driverFile,
+  });
 
   final bool semanticsEnabled;
+  final bool needFullTimeline;
+  final String testFile;
+  final String timelineSummaryFile;
+  final String? timelineTraceFile;
+  final String? transitionDurationFile;
+  final String? driverFile;
 
   Future<TaskResult> call() async {
     final Device device = await devices.workingDevice;
     await device.unlock();
     final String deviceId = device.deviceId;
-    final Directory galleryDirectory =
-        dir('${flutterDirectory.path}/examples/flutter_gallery');
-    await inDirectory(galleryDirectory, () async {
-      await flutter('packages', options: <String>['get']);
+    final Directory galleryDirectory = dir('${flutterDirectory.path}/dev/integration_tests/flutter_gallery');
+    await inDirectory<void>(galleryDirectory, () async {
+      String? applicationBinaryPath;
+      if (deviceOperatingSystem == DeviceOperatingSystem.android) {
+        section('BUILDING APPLICATION');
+        await flutter(
+          'build',
+          options: <String>[
+            'apk',
+            '--no-android-gradle-daemon',
+            '--profile',
+            '-t',
+            'test_driver/$testFile.dart',
+            '--target-platform',
+            'android-arm,android-arm64',
+          ],
+        );
+        applicationBinaryPath = 'build/app/outputs/flutter-apk/app-profile.apk';
+      }
 
-      if (deviceOperatingSystem == DeviceOperatingSystem.ios)
-        await prepareProvisioningCertificates(galleryDirectory.path);
-
-      final String testDriver = semanticsEnabled
-          ? 'transitions_perf_with_semantics.dart'
-          : 'transitions_perf.dart';
-
+      final String testDriver = driverFile ?? (semanticsEnabled
+          ? '${testFile}_with_semantics_test'
+          : '${testFile}_test');
+      section('DRIVE START');
       await flutter('drive', options: <String>[
+        '--no-dds',
         '--profile',
-        '--trace-startup',
-        '-t',
-        'test_driver/$testDriver',
+        if (needFullTimeline)
+          '--trace-startup',
+        if (applicationBinaryPath != null)
+          '--use-application-binary=$applicationBinaryPath'
+        else
+          ...<String>[
+            '-t',
+            'test_driver/$testFile.dart',
+          ],
+        '--driver',
+        'test_driver/$testDriver.dart',
         '-d',
         deviceId,
       ]);
     });
 
-    // Route paths contains slashes, which Firebase doesn't accept in keys, so we
-    // remove them.
-    final Map<String, dynamic> original = Map<String, dynamic>.from(
-        json.decode(
-            file('${galleryDirectory.path}/build/transition_durations.timeline.json').readAsStringSync()
-        ));
-    final Map<String, List<int>> transitions = <String, List<int>>{};
-    for (String key in original.keys) {
-      transitions[key.replaceAll('/', '')] = List<int>.from(original[key]);
+    final String testOutputDirectory = Platform.environment['FLUTTER_TEST_OUTPUTS_DIR'] ?? '${galleryDirectory.path}/build';
+    final Map<String, dynamic> summary = json.decode(
+      file('$testOutputDirectory/$timelineSummaryFile.json').readAsStringSync(),
+    ) as Map<String, dynamic>;
+
+    if (transitionDurationFile != null) {
+      final Map<String, dynamic> original = json.decode(
+        file('$testOutputDirectory/$transitionDurationFile.json').readAsStringSync(),
+      ) as Map<String, dynamic>;
+      final Map<String, List<int>> transitions = <String, List<int>>{};
+      for (final String key in original.keys) {
+        transitions[key] = List<int>.from(original[key] as List<dynamic>);
+      }
+      summary['transitions'] = transitions;
+      summary['missed_transition_count'] = _countMissedTransitions(transitions);
     }
 
-    final Map<String, dynamic> summary = json.decode(file('${galleryDirectory.path}/build/transitions.timeline_summary.json').readAsStringSync());
-
-    final Map<String, dynamic> data = <String, dynamic>{
-      'transitions': transitions,
-      'missed_transition_count': _countMissedTransitions(transitions),
-    };
-    data.addAll(summary);
-
-    return new TaskResult.success(data, benchmarkScoreKeys: <String>[
-      'missed_transition_count',
-      'average_frame_build_time_millis',
-      'worst_frame_build_time_millis',
-      'missed_frame_build_budget_count',
-      'average_frame_rasterizer_time_millis',
-      'worst_frame_rasterizer_time_millis',
-      '90th_percentile_frame_rasterizer_time_millis',
-      '99th_percentile_frame_rasterizer_time_millis',
-    ]);
+    return TaskResult.success(summary,
+      detailFiles: <String>[
+        if (transitionDurationFile != null)
+          '$testOutputDirectory/$transitionDurationFile.json',
+        if (timelineTraceFile != null)
+          '$testOutputDirectory/$timelineTraceFile.json'
+      ],
+      benchmarkScoreKeys: <String>[
+        if (transitionDurationFile != null)
+          'missed_transition_count',
+        'average_frame_build_time_millis',
+        'worst_frame_build_time_millis',
+        '90th_percentile_frame_build_time_millis',
+        '99th_percentile_frame_build_time_millis',
+        'average_frame_rasterizer_time_millis',
+        'worst_frame_rasterizer_time_millis',
+        '90th_percentile_frame_rasterizer_time_millis',
+        '99th_percentile_frame_rasterizer_time_millis',
+        'average_layer_cache_count',
+        '90th_percentile_layer_cache_count',
+        '99th_percentile_layer_cache_count',
+        'worst_layer_cache_count',
+        'average_layer_cache_memory',
+        '90th_percentile_layer_cache_memory',
+        '99th_percentile_layer_cache_memory',
+        'worst_layer_cache_memory',
+        'average_picture_cache_count',
+        '90th_percentile_picture_cache_count',
+        '99th_percentile_picture_cache_count',
+        'worst_picture_cache_count',
+        'average_picture_cache_memory',
+        '90th_percentile_picture_cache_memory',
+        '99th_percentile_picture_cache_memory',
+        'worst_picture_cache_memory',
+      ],
+    );
   }
 }
 

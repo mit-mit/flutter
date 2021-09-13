@@ -1,20 +1,21 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:meta/meta.dart';
+import 'dart:io';
+
 import 'package:yaml/yaml.dart';
 
 import 'utils.dart';
 
 /// Loads manifest data from `manifest.yaml` file or from [yaml], if present.
-Manifest loadTaskManifest([ String yaml ]) {
+Manifest loadTaskManifest([ String? yaml ]) {
   final dynamic manifestYaml = yaml == null
     ? loadYaml(file('manifest.yaml').readAsStringSync())
     : loadYamlNode(yaml);
 
-  _checkType(manifestYaml is Map, manifestYaml, 'Manifest', 'dictionary');
-  return _validateAndParseManifest(manifestYaml);
+  _checkType(manifestYaml is YamlMap, manifestYaml, 'Manifest', 'dictionary');
+  return _validateAndParseManifest(manifestYaml as YamlMap);
 }
 
 /// Contains CI task information.
@@ -28,12 +29,13 @@ class Manifest {
 /// A CI task.
 class ManifestTask {
   ManifestTask._({
-    @required this.name,
-    @required this.description,
-    @required this.stage,
-    @required this.requiredAgentCapabilities,
-    @required this.isFlaky,
-    @required this.timeoutInMinutes,
+    required this.name,
+    required this.description,
+    required this.stage,
+    required this.requiredAgentCapabilities,
+    required this.isFlaky,
+    required this.timeoutInMinutes,
+    required this.onLuci,
   }) {
     final String taskName = 'task "$name"';
     _checkIsNotBlank(name, 'Task name', taskName);
@@ -52,7 +54,7 @@ class ManifestTask {
   final String stage;
 
   /// Capabilities required of the build agent to be able to perform this task.
-  final List<dynamic> requiredAgentCapabilities;
+  final List<String> requiredAgentCapabilities;
 
   /// Whether this test is flaky.
   ///
@@ -61,6 +63,23 @@ class ManifestTask {
 
   /// An optional custom timeout specified in minutes.
   final int timeoutInMinutes;
+
+  /// (Optional) Whether this test runs on LUCI.
+  final bool onLuci;
+
+  /// Whether the task is supported by the current host platform
+  bool isSupportedByHost() {
+    final Set<String> supportedHosts = Set<String>.from(
+      requiredAgentCapabilities.map<String>(
+        (String str) => str.split('/')[0]
+      )
+    );
+    String hostPlatform = Platform.operatingSystem;
+    if (hostPlatform == 'macos') {
+      hostPlatform = 'mac'; // package:platform uses 'macos' while manifest.yaml uses 'mac'
+    }
+    return supportedHosts.contains(hostPlatform);
+  }
 }
 
 /// Thrown when the manifest YAML is not valid.
@@ -75,53 +94,67 @@ class ManifestError extends Error {
 
 // There's no good YAML validator, at least not for Dart, so we validate
 // manually. It's not too much code and produces good error messages.
-Manifest _validateAndParseManifest(Map<dynamic, dynamic> manifestYaml) {
+Manifest _validateAndParseManifest(YamlMap manifestYaml) {
   _checkKeys(manifestYaml, 'manifest', const <String>['tasks']);
-  return new Manifest._(_validateAndParseTasks(manifestYaml['tasks']));
+  return Manifest._(_validateAndParseTasks(manifestYaml['tasks']));
 }
 
 List<ManifestTask> _validateAndParseTasks(dynamic tasksYaml) {
-  _checkType(tasksYaml is Map, tasksYaml, 'Value of "tasks"', 'dictionary');
-  final List<dynamic> sortedKeys = tasksYaml.keys.toList()..sort();
-  return sortedKeys.map((dynamic taskName) => _validateAndParseTask(taskName, tasksYaml[taskName])).toList();
+  _checkType(tasksYaml is YamlMap, tasksYaml, 'Value of "tasks"', 'dictionary');
+  final List<String> sortedKeys = (tasksYaml as YamlMap).keys.toList().cast<String>()..sort();
+  // ignore: avoid_dynamic_calls
+  return sortedKeys.map<ManifestTask>((String taskName) => _validateAndParseTask(taskName, tasksYaml[taskName])).toList();
 }
 
-ManifestTask _validateAndParseTask(dynamic taskName, dynamic taskYaml) {
-  _checkType(taskName is String, taskName, 'Task name', 'string');
-  _checkType(taskYaml is Map, taskYaml, 'Value of task "$taskName"', 'dictionary');
-  _checkKeys(taskYaml, 'Value of task "$taskName"', const <String>[
+ManifestTask _validateAndParseTask(String taskName, dynamic taskYaml) {
+  _checkType(taskYaml is YamlMap, taskYaml, 'Value of task "$taskName"', 'dictionary');
+  _checkKeys(taskYaml as YamlMap, 'Value of task "$taskName"', const <String>[
     'description',
     'stage',
     'required_agent_capabilities',
     'flaky',
     'timeout_in_minutes',
+    'on_luci',
   ]);
-
+  // ignore: avoid_dynamic_calls
   final dynamic isFlaky = taskYaml['flaky'];
   if (isFlaky != null) {
     _checkType(isFlaky is bool, isFlaky, 'flaky', 'boolean');
   }
 
+  // ignore: avoid_dynamic_calls
   final dynamic timeoutInMinutes = taskYaml['timeout_in_minutes'];
   if (timeoutInMinutes != null) {
     _checkType(timeoutInMinutes is int, timeoutInMinutes, 'timeout_in_minutes', 'integer');
   }
 
+  // ignore: avoid_dynamic_calls
   final List<dynamic> capabilities = _validateAndParseCapabilities(taskName, taskYaml['required_agent_capabilities']);
-  return new ManifestTask._(
+
+  // ignore: avoid_dynamic_calls
+  final dynamic onLuci = taskYaml['on_luci'];
+  if (onLuci != null) {
+    _checkType(onLuci is bool, onLuci, 'on_luci', 'boolean');
+  }
+
+  return ManifestTask._(
     name: taskName,
-    description: taskYaml['description'],
-    stage: taskYaml['stage'],
-    requiredAgentCapabilities: capabilities,
-    isFlaky: isFlaky ?? false,
-    timeoutInMinutes: timeoutInMinutes,
+    // ignore: avoid_dynamic_calls
+    description: taskYaml['description'] as String,
+    // ignore: avoid_dynamic_calls
+    stage: taskYaml['stage'] as String,
+    requiredAgentCapabilities: capabilities as List<String>,
+    isFlaky: isFlaky as bool,
+    timeoutInMinutes: timeoutInMinutes as int,
+    onLuci: onLuci as bool,
   );
 }
 
 List<String> _validateAndParseCapabilities(String taskName, dynamic capabilitiesYaml) {
   _checkType(capabilitiesYaml is List, capabilitiesYaml, 'required_agent_capabilities', 'list');
-  for (int i = 0; i < capabilitiesYaml.length; i++) {
-    final dynamic capability = capabilitiesYaml[i];
+  final List<dynamic> capabilities = capabilitiesYaml as List<dynamic>;
+  for (int i = 0; i < capabilities.length; i++) {
+    final dynamic capability = capabilities[i];
     _checkType(capability is String, capability, 'required_agent_capabilities[$i]', 'string');
   }
   return capabilitiesYaml.cast<String>();
@@ -129,22 +162,22 @@ List<String> _validateAndParseCapabilities(String taskName, dynamic capabilities
 
 void _checkType(bool isValid, dynamic value, String variableName, String typeName) {
   if (!isValid) {
-    throw new ManifestError(
+    throw ManifestError(
       '$variableName must be a $typeName but was ${value.runtimeType}: $value',
     );
   }
 }
 
 void _checkIsNotBlank(dynamic value, String variableName, String ownerName) {
-  if (value == null || value.isEmpty) {
-    throw new ManifestError('$variableName must not be empty in $ownerName.');
+  if (value == null || value is String && value.isEmpty || value is List<dynamic> && value.isEmpty) {
+    throw ManifestError('$variableName must not be empty in $ownerName.');
   }
 }
 
 void _checkKeys(Map<dynamic, dynamic> map, String variableName, List<String> allowedKeys) {
-  for (String key in map.keys) {
+  for (final String key in map.keys.cast<String>()) {
     if (!allowedKeys.contains(key)) {
-      throw new ManifestError(
+      throw ManifestError(
         'Unrecognized property "$key" in $variableName. '
         'Allowed properties: ${allowedKeys.join(', ')}');
     }

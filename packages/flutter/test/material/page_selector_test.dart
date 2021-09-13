@@ -1,33 +1,33 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 const Color kSelectedColor = Color(0xFF00FF00);
 const Color kUnselectedColor = Colors.transparent;
 
-Widget buildFrame(TabController tabController, { Color color, Color selectedColor, double indicatorSize = 12.0 }) {
-  return new Directionality(
+Widget buildFrame(TabController tabController, { Color? color, Color? selectedColor, double indicatorSize = 12.0 }) {
+  return Directionality(
     textDirection: TextDirection.ltr,
-    child: new Theme(
-      data: new ThemeData(accentColor: kSelectedColor),
-      child: new SizedBox.expand(
-        child: new Center(
-          child: new SizedBox(
+    child: Theme(
+      data: ThemeData(colorScheme: const ColorScheme.light().copyWith(secondary: kSelectedColor)),
+      child: SizedBox.expand(
+        child: Center(
+          child: SizedBox(
             width: 400.0,
             height: 400.0,
-            child: new Column(
+            child: Column(
               children: <Widget>[
-                new TabPageSelector(
+                TabPageSelector(
                   controller: tabController,
                   color: color,
                   selectedColor: selectedColor,
                   indicatorSize: indicatorSize,
                 ),
-                new Flexible(
-                  child: new TabBarView(
+                Flexible(
+                  child: TabBarView(
                     controller: tabController,
                     children: const <Widget>[
                       Center(child: Text('0')),
@@ -49,15 +49,15 @@ List<Color> indicatorColors(WidgetTester tester) {
   final Iterable<TabPageSelectorIndicator> indicators = tester.widgetList(
     find.descendant(
       of: find.byType(TabPageSelector),
-      matching: find.byType(TabPageSelectorIndicator)
-    )
+      matching: find.byType(TabPageSelectorIndicator),
+    ),
   );
-  return indicators.map((TabPageSelectorIndicator indicator) => indicator.backgroundColor).toList();
+  return indicators.map<Color>((TabPageSelectorIndicator indicator) => indicator.backgroundColor).toList();
 }
 
 void main() {
   testWidgets('PageSelector responds correctly to setting the TabController index', (WidgetTester tester) async {
-    final TabController tabController = new TabController(
+    final TabController tabController = TabController(
       vsync: const TestVSync(),
       length: 3,
     );
@@ -78,7 +78,7 @@ void main() {
   });
 
   testWidgets('PageSelector responds correctly to TabController.animateTo()', (WidgetTester tester) async {
-    final TabController tabController = new TabController(
+    final TabController tabController = TabController(
       vsync: const TestVSync(),
       length: 3,
     );
@@ -90,7 +90,7 @@ void main() {
     tabController.animateTo(1, duration: const Duration(milliseconds: 200));
     await tester.pump();
     // Verify that indicator 0's color is becoming increasingly transparent,
-    /// and indicator 1's color is becoming increasingly opaque during the
+    // and indicator 1's color is becoming increasingly opaque during the
     // 200ms animation. Indicator 2 remains transparent throughout.
     await tester.pump(const Duration(milliseconds: 10));
     List<Color> colors = indicatorColors(tester);
@@ -121,7 +121,7 @@ void main() {
   });
 
   testWidgets('PageSelector responds correctly to TabBarView drags', (WidgetTester tester) async {
-    final TabController tabController = new TabController(
+    final TabController tabController = TabController(
       vsync: const TestVSync(),
       initialIndex: 1,
       length: 3,
@@ -183,7 +183,7 @@ void main() {
     const Color kRed = Color(0xFFFF0000);
     const Color kBlue = Color(0xFF0000FF);
 
-    final TabController tabController = new TabController(
+    final TabController tabController = TabController(
       vsync: const TestVSync(),
       initialIndex: 1,
       length: 3,
@@ -199,7 +199,7 @@ void main() {
   });
 
   testWidgets('PageSelector indicatorSize', (WidgetTester tester) async {
-    final TabController tabController = new TabController(
+    final TabController tabController = TabController(
       vsync: const TestVSync(),
       initialIndex: 1,
       length: 3,
@@ -212,7 +212,7 @@ void main() {
     ).evaluate();
 
     // Indicators get an 8 pixel margin, 16 + 8 = 24.
-    for (Element indicatorElement in indicatorElements)
+    for (final Element indicatorElement in indicatorElements)
       expect(indicatorElement.size, const Size(24.0, 24.0));
 
     expect(tester.getSize(find.byType(TabPageSelector)).height, 24.0);

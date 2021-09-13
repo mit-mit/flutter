@@ -1,10 +1,11 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:convert';
 
 import 'package:meta/meta.dart';
+
 import 'constants.dart';
 
 /// A semantics node created from Android accessibility information.
@@ -18,7 +19,7 @@ import 'constants.dart';
 /// See also:
 ///
 ///   * [AccessibilityNodeInfo](https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo)
-class AndroidSemanticsNode  {
+class AndroidSemanticsNode {
   AndroidSemanticsNode._(this._values);
 
   /// Deserializes a new [AndroidSemanticsNode] from a json map.
@@ -33,10 +34,12 @@ class AndroidSemanticsNode  {
   ///         "isEnabled": bool,
   ///         "isFocusable": bool,
   ///         "isFocused": bool,
+  ///         "isHeading": bool,
   ///         "isPassword": bool,
   ///         "isLongClickable": bool,
   ///       },
   ///       "text": String,
+  ///       "contentDescription": String,
   ///       "className": String,
   ///       "id": int,
   ///       "rect": {
@@ -50,19 +53,29 @@ class AndroidSemanticsNode  {
   ///       ]
   ///     }
   factory AndroidSemanticsNode.deserialize(String value) {
-    return new AndroidSemanticsNode._(json.decode(value));
+    return AndroidSemanticsNode._(json.decode(value) as Map<String, Object>);
   }
 
   final Map<String, Object> _values;
   final List<AndroidSemanticsNode> _children = <AndroidSemanticsNode>[];
 
-  Map<String, Object> get _flags => _values['flags'];
+  Map<String, Object> get _flags => _values['flags'] as Map<String, Object>;
 
   /// The text value of the semantics node.
   ///
   /// This is produced by combining the value, label, and hint fields from
   /// the Flutter [SemanticsNode].
-  String get text => _values['text'];
+  String get text => _values['text'] as String;
+
+  /// The contentDescription of the semantics node.
+  ///
+  /// This field is used for the Switch, Radio, and Checkbox widgets
+  /// instead of [text]. If the text property is used for these, TalkBack
+  /// will not read out the "checked" or "not checked" label by default.
+  ///
+  /// This is produced by combining the value, label, and hint fields from
+  /// the Flutter [SemanticsNode].
+  String get contentDescription => _values['contentDescription'] as String;
 
   /// The className of the semantics node.
   ///
@@ -71,10 +84,10 @@ class AndroidSemanticsNode  {
   ///
   /// If a more specific value isn't provided, it defaults to
   /// "android.view.View".
-  String get className => _values['className'];
+  String get className => _values['className'] as String;
 
   /// The identifier for this semantics node.
-  int get id => _values['id'];
+  int get id => _values['id'] as int;
 
   /// The children of this semantics node.
   List<AndroidSemanticsNode> get children => _children;
@@ -82,43 +95,46 @@ class AndroidSemanticsNode  {
   /// Whether the node is currently in a checked state.
   ///
   /// Equivalent to [SemanticsFlag.isChecked].
-  bool get isChecked => _flags['isChecked'];
+  bool get isChecked => _flags['isChecked'] as bool;
 
   /// Whether the node can be in a checked state.
   ///
   /// Equivalent to [SemanticsFlag.hasCheckedState]
-  bool get isCheckable => _flags['isCheckable'];
+  bool get isCheckable => _flags['isCheckable'] as bool;
 
   /// Whether the node is editable.
   ///
   /// This is usually only applied to text fields, which map
   /// to "android.widget.EditText".
-  bool get isEditable => _flags['isEditable'];
+  bool get isEditable => _flags['isEditable'] as bool;
 
   /// Whether the node is enabled.
-  bool get isEnabled => _flags['isEnabled'];
+  bool get isEnabled => _flags['isEnabled'] as bool;
 
   /// Whether the node is focusable.
-  bool get isFocusable => _flags['isFocusable'];
+  bool get isFocusable => _flags['isFocusable'] as bool;
 
   /// Whether the node is focused.
-  bool get isFocused => _flags['isFocused'];
+  bool get isFocused => _flags['isFocused'] as bool;
+
+  /// Whether the node is considered a heading.
+  bool get isHeading => _flags['isHeading'] as bool;
 
   /// Whether the node represents a password field.
   ///
   /// Equivalent to [SemanticsFlag.isObscured].
-  bool get isPassword => _flags['isPassword'];
+  bool get isPassword => _flags['isPassword'] as bool;
 
   /// Whether the node is long clickable.
   ///
   /// Equivalent to having [SemanticsAction.longPress].
-  bool get isLongClickable => _flags['isLongClickable'];
+  bool get isLongClickable => _flags['isLongClickable'] as bool;
 
   /// Gets a [Rect] which defines the position and size of the semantics node.
   Rect getRect() {
-    final Map<String, Object> rawRect = _values['rect'];
+    final Map<String, Object> rawRect = _values['rect'] as Map<String, Object>;
     final Map<String, int> rect = rawRect.cast<String, int>();
-    return new Rect.fromLTRB(
+    return Rect.fromLTRB(
       rect['left'].toDouble(),
       rect['top'].toDouble(),
       rect['right'].toDouble(),
@@ -129,17 +145,13 @@ class AndroidSemanticsNode  {
   /// Gets a [Size] which defines the size of the semantics node.
   Size getSize() {
     final Rect rect = getRect();
-    return new Size(rect.bottom - rect.top, rect.right - rect.left);
+    return Size(rect.bottom - rect.top, rect.right - rect.left);
   }
 
   /// Gets a list of [AndroidSemanticsActions] which are defined for the node.
-  List<AndroidSemanticsAction> getActions() {
-    final List<AndroidSemanticsAction> result = <AndroidSemanticsAction>[];
-    for (int id in _values['actions']) {
-      result.add(AndroidSemanticsAction.deserialize(id));
-    }
-    return result;
-  }
+  List<AndroidSemanticsAction> getActions() => <AndroidSemanticsAction>[
+    for (final int id in (_values['actions'] as List<dynamic>).cast<int>()) AndroidSemanticsAction.deserialize(id),
+  ];
 
   @override
   String toString() {
@@ -171,18 +183,17 @@ class Rect {
   final double bottom;
 
   @override
-  int get hashCode =>
-      top.hashCode ^ left.hashCode ^ right.hashCode ^ bottom.hashCode;
+  int get hashCode => Object.hash(top, left, right, bottom);
 
   @override
   bool operator ==(Object other) {
     if (other.runtimeType != runtimeType)
       return false;
-    final Rect typedOther = other;
-    return typedOther.top == top &&
-        typedOther.left == left &&
-        typedOther.right == right &&
-        typedOther.bottom == bottom;
+    return other is Rect
+        && other.top == top
+        && other.left == left
+        && other.right == right
+        && other.bottom == bottom;
   }
 
   @override
@@ -204,14 +215,15 @@ class Size {
   final double height;
 
   @override
-  int get hashCode => width.hashCode ^ height.hashCode;
+  int get hashCode => Object.hash(width, height);
 
   @override
   bool operator ==(Object other) {
     if (other.runtimeType != runtimeType)
       return false;
-    final Size typedOther = other;
-    return typedOther.width == width && typedOther.height == height;
+    return other is Size
+        && other.width == width
+        && other.height == height;
   }
 
   @override

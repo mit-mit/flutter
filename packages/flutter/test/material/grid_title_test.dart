@@ -1,30 +1,30 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('GridTile control test', (WidgetTester tester) async {
-    final Key headerKey = new UniqueKey();
-    final Key footerKey = new UniqueKey();
+    final Key headerKey = UniqueKey();
+    final Key footerKey = UniqueKey();
 
-    await tester.pumpWidget(new MaterialApp(
-      home: new GridTile(
-        header: new GridTileBar(
+    await tester.pumpWidget(MaterialApp(
+      home: GridTile(
+        header: GridTileBar(
           key: headerKey,
           leading: const Icon(Icons.thumb_up),
           title: const Text('Header'),
           subtitle: const Text('Subtitle'),
           trailing: const Icon(Icons.thumb_up),
         ),
-        child: new DecoratedBox(
-          decoration: new BoxDecoration(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
             color: Colors.green[500],
           ),
         ),
-        footer: new GridTileBar(
+        footer: GridTileBar(
           key: footerKey,
           title: const Text('Footer'),
           backgroundColor: Colors.black38,
@@ -35,8 +35,10 @@ void main() {
     expect(find.text('Header'), findsOneWidget);
     expect(find.text('Footer'), findsOneWidget);
 
-    expect(tester.getBottomLeft(find.byKey(headerKey)).dy,
-           lessThan(tester.getTopLeft(find.byKey(footerKey)).dy));
+    expect(
+      tester.getBottomLeft(find.byKey(headerKey)).dy,
+      lessThan(tester.getTopLeft(find.byKey(footerKey)).dy),
+    );
 
     await tester.pumpWidget(
       const Directionality(

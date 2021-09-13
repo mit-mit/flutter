@@ -1,8 +1,6 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-import 'dart:async';
 
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
@@ -49,7 +47,6 @@ ScrollDirection flipScrollDirection(ScrollDirection direction) {
     case ScrollDirection.reverse:
       return ScrollDirection.forward;
   }
-  return null;
 }
 
 /// Which part of the content inside the viewport should be visible.
@@ -95,6 +92,9 @@ abstract class ViewportOffset extends ChangeNotifier {
   /// the value changes due to [correctBy]).
   double get pixels;
 
+  /// Whether the [pixels] property is available.
+  bool get hasPixels;
+
   /// Called when the viewport's extents are established.
   ///
   /// The argument is the dimension of the [RenderViewport] in the main axis
@@ -123,8 +123,9 @@ abstract class ViewportOffset extends ChangeNotifier {
   /// Called when the viewport's content extents are established.
   ///
   /// The arguments are the minimum and maximum scroll extents respectively. The
-  /// minimum will be equal to or less than zero, the maximum will be equal to
-  /// or greater than zero.
+  /// minimum will be equal to or less than the maximum. In the case of slivers,
+  /// the minimum will be equal to or less than zero, the maximum will be equal
+  /// to or greater than zero.
   ///
   /// The maximum scroll extent has the viewport dimension subtracted from it.
   /// For instance, if there is 100.0 pixels of scrollable content, and the
@@ -176,13 +177,36 @@ abstract class ViewportOffset extends ChangeNotifier {
   ///
   /// The duration must not be zero. To jump to a particular value without an
   /// animation, use [jumpTo].
-  Future<Null> animateTo(double to, {
-    @required Duration duration,
-    @required Curve curve,
+  Future<void> animateTo(
+    double to, {
+    required Duration duration,
+    required Curve curve,
   });
 
+  /// Calls [jumpTo] if duration is null or [Duration.zero], otherwise
+  /// [animateTo] is called.
+  ///
+  /// If [animateTo] is called then [curve] defaults to [Curves.ease]. The
+  /// [clamp] parameter is ignored by this stub implementation but subclasses
+  /// like [ScrollPosition] handle it by adjusting [to] to prevent over or
+  /// underscroll.
+  Future<void> moveTo(
+    double to, {
+    Duration? duration,
+    Curve? curve,
+    bool? clamp,
+  }) {
+    assert(to != null);
+    if (duration == null || duration == Duration.zero) {
+      jumpTo(to);
+      return Future<void>.value();
+    } else {
+      return animateTo(to, duration: duration, curve: curve ?? Curves.ease);
+    }
+  }
+
   /// The direction in which the user is trying to change [pixels], relative to
-  /// the viewport's [RenderViewport.axisDirection].
+  /// the viewport's [RenderViewportBase.axisDirection].
   ///
   /// If the _user_ is not scrolling, this will return [ScrollDirection.idle]
   /// even if there is (for example) a [ScrollActivity] currently animating the
@@ -218,11 +242,13 @@ abstract class ViewportOffset extends ChangeNotifier {
   /// the [State] base class calls [debugFillDescription] to collect useful
   /// information from subclasses to incorporate into its return value.
   ///
-  /// If you override this, make sure to start your method with a call to
-  /// `super.debugFillDescription(description)`.
+  /// Implementations of this method should start with a call to the inherited
+  /// method, as in `super.debugFillDescription(description)`.
   @mustCallSuper
   void debugFillDescription(List<String> description) {
-    description.add('offset: ${pixels?.toStringAsFixed(1)}');
+    if (hasPixels) {
+      description.add('offset: ${pixels.toStringAsFixed(1)}');
+    }
   }
 }
 
@@ -234,6 +260,9 @@ class _FixedViewportOffset extends ViewportOffset {
 
   @override
   double get pixels => _pixels;
+
+  @override
+  bool get hasPixels => true;
 
   @override
   bool applyViewportDimension(double viewportDimension) => true;
@@ -252,10 +281,11 @@ class _FixedViewportOffset extends ViewportOffset {
   }
 
   @override
-  Future<Null> animateTo(double to, {
-    @required Duration duration,
-    @required Curve curve,
-  }) async => null;
+  Future<void> animateTo(
+    double to, {
+    required Duration duration,
+    required Curve curve,
+  }) async { }
 
   @override
   ScrollDirection get userScrollDirection => ScrollDirection.idle;

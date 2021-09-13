@@ -1,9 +1,10 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter/widgets.dart';
 
+import 'debug.dart';
 import 'icon_button.dart';
 import 'icons.dart';
 import 'material_localizations.dart';
@@ -24,30 +25,32 @@ import 'theme.dart';
 class BackButtonIcon extends StatelessWidget {
   /// Creates an icon that shows the appropriate "back" image for
   /// the current platform (as obtained from the [Theme]).
-  const BackButtonIcon({ Key key }) : super(key: key);
+  const BackButtonIcon({ Key? key }) : super(key: key);
 
   /// Returns the appropriate "back" icon for the given `platform`.
   static IconData _getIconData(TargetPlatform platform) {
     switch (platform) {
       case TargetPlatform.android:
       case TargetPlatform.fuchsia:
+      case TargetPlatform.linux:
+      case TargetPlatform.windows:
         return Icons.arrow_back;
       case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
         return Icons.arrow_back_ios;
     }
-    assert(false);
-    return null;
   }
 
   @override
-  Widget build(BuildContext context) => new Icon(_getIconData(Theme.of(context).platform));
+  Widget build(BuildContext context) => Icon(_getIconData(Theme.of(context).platform));
 }
 
 /// A material design back button.
 ///
 /// A [BackButton] is an [IconButton] with a "back" icon appropriate for the
 /// current [TargetPlatform]. When pressed, the back button calls
-/// [Navigator.maybePop] to return to the previous route.
+/// [Navigator.maybePop] to return to the previous route unless a custom
+/// [onPressed] callback is provided.
 ///
 /// When deciding to display a [BackButton], consider using
 /// `ModalRoute.of(context)?.canPop` to check whether the current route can be
@@ -71,23 +74,38 @@ class BackButtonIcon extends StatelessWidget {
 class BackButton extends StatelessWidget {
   /// Creates an [IconButton] with the appropriate "back" icon for the current
   /// target platform.
-  const BackButton({ Key key, this.color }) : super(key: key);
+  const BackButton({ Key? key, this.color, this.onPressed }) : super(key: key);
 
   /// The color to use for the icon.
   ///
   /// Defaults to the [IconThemeData.color] specified in the ambient [IconTheme],
   /// which usually matches the ambient [Theme]'s [ThemeData.iconTheme].
-  final Color color;
+  final Color? color;
+
+  /// An override callback to perform instead of the default behavior which is
+  /// to pop the [Navigator].
+  ///
+  /// It can, for instance, be used to pop the platform's navigation stack
+  /// via [SystemNavigator] instead of Flutter's [Navigator] in add-to-app
+  /// situations.
+  ///
+  /// Defaults to null.
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return new IconButton(
+    assert(debugCheckHasMaterialLocalizations(context));
+    return IconButton(
       icon: const BackButtonIcon(),
       color: color,
       tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       onPressed: () {
-        Navigator.maybePop(context);
-      }
+        if (onPressed != null) {
+          onPressed!();
+        } else {
+          Navigator.maybePop(context);
+        }
+      },
     );
   }
 }
@@ -110,15 +128,37 @@ class BackButton extends StatelessWidget {
 ///  * [IconButton], to create other material design icon buttons.
 class CloseButton extends StatelessWidget {
   /// Creates a Material Design close button.
-  const CloseButton({ Key key }) : super(key: key);
+  const CloseButton({ Key? key, this.color, this.onPressed }) : super(key: key);
+
+  /// The color to use for the icon.
+  ///
+  /// Defaults to the [IconThemeData.color] specified in the ambient [IconTheme],
+  /// which usually matches the ambient [Theme]'s [ThemeData.iconTheme].
+  final Color? color;
+
+  /// An override callback to perform instead of the default behavior which is
+  /// to pop the [Navigator].
+  ///
+  /// It can, for instance, be used to pop the platform's navigation stack
+  /// via [SystemNavigator] instead of Flutter's [Navigator] in add-to-app
+  /// situations.
+  ///
+  /// Defaults to null.
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return new IconButton(
+    assert(debugCheckHasMaterialLocalizations(context));
+    return IconButton(
       icon: const Icon(Icons.close),
+      color: color,
       tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
       onPressed: () {
-        Navigator.maybePop(context);
+        if (onPressed != null) {
+          onPressed!();
+        } else {
+          Navigator.maybePop(context);
+        }
       },
     );
   }

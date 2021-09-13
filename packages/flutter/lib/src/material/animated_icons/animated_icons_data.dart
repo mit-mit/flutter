@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -64,6 +64,7 @@ abstract class AnimatedIcons {
 /// animated vector graphics format.
 ///
 /// See also:
+///
 ///  * [AnimatedIcons], a class that contains constants that implement this interface.
 abstract class AnimatedIconData {
   /// Abstract const constructor. This constructor enables subclasses to provide
@@ -74,6 +75,7 @@ abstract class AnimatedIconData {
   /// right-to-left.
   ///
   /// See also:
+  ///
   ///  * [TextDirection], which discusses concerns regarding reading direction
   ///    in Flutter.
   ///  * [Directionality], a widget which determines the ambient directionality.

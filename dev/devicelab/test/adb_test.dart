@@ -1,26 +1,36 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
-
 import 'package:collection/collection.dart' show ListEquality, MapEquality;
 
-import 'package:flutter_devicelab/framework/adb.dart';
+import 'package:flutter_devicelab/framework/devices.dart';
+import 'package:meta/meta.dart';
 
 import 'common.dart';
 
 void main() {
   group('device', () {
-    Device device;
+    late Device device;
 
     setUp(() {
       FakeDevice.resetLog();
-      device = null;
-      device = new FakeDevice();
+      device = FakeDevice(deviceId: 'fakeDeviceId');
     });
 
     tearDown(() {
+    });
+
+    group('cpu check', () {
+      test('arm64', () async {
+        FakeDevice.pretendArm64();
+        final AndroidDevice androidDevice = device as AndroidDevice;
+        expect(await androidDevice.isArm64(), isTrue);
+        expectLog(<CommandArgs>[
+          cmd(command: 'getprop', arguments: <String>['ro.bootimage.build.fingerprint', ';', 'getprop', 'ro.build.version.release', ';', 'getprop', 'ro.build.version.sdk'], environment: null),
+          cmd(command: 'getprop', arguments: <String>['ro.product.cpu.abi'], environment: null),
+        ]);
+      });
     });
 
     group('isAwake/isAsleep', () {
@@ -41,6 +51,7 @@ void main() {
       test('sends power event', () async {
         await device.togglePower();
         expectLog(<CommandArgs>[
+          cmd(command: 'getprop', arguments: <String>['ro.bootimage.build.fingerprint', ';', 'getprop', 'ro.build.version.release', ';', 'getprop', 'ro.build.version.sdk'], environment: null),
           cmd(command: 'input', arguments: <String>['keyevent', '26']),
         ]);
       });
@@ -51,6 +62,7 @@ void main() {
         FakeDevice.pretendAwake();
         await device.wakeUp();
         expectLog(<CommandArgs>[
+          cmd(command: 'getprop', arguments: <String>['ro.bootimage.build.fingerprint', ';', 'getprop', 'ro.build.version.release', ';', 'getprop', 'ro.build.version.sdk'], environment: null),
           cmd(command: 'dumpsys', arguments: <String>['power']),
         ]);
       });
@@ -59,6 +71,7 @@ void main() {
         FakeDevice.pretendAsleep();
         await device.wakeUp();
         expectLog(<CommandArgs>[
+          cmd(command: 'getprop', arguments: <String>['ro.bootimage.build.fingerprint', ';', 'getprop', 'ro.build.version.release', ';', 'getprop', 'ro.build.version.sdk'], environment: null),
           cmd(command: 'dumpsys', arguments: <String>['power']),
           cmd(command: 'input', arguments: <String>['keyevent', '26']),
         ]);
@@ -70,6 +83,7 @@ void main() {
         FakeDevice.pretendAsleep();
         await device.sendToSleep();
         expectLog(<CommandArgs>[
+          cmd(command: 'getprop', arguments: <String>['ro.bootimage.build.fingerprint', ';', 'getprop', 'ro.build.version.release', ';', 'getprop', 'ro.build.version.sdk'], environment: null),
           cmd(command: 'dumpsys', arguments: <String>['power']),
         ]);
       });
@@ -78,6 +92,7 @@ void main() {
         FakeDevice.pretendAwake();
         await device.sendToSleep();
         expectLog(<CommandArgs>[
+          cmd(command: 'getprop', arguments: <String>['ro.bootimage.build.fingerprint', ';', 'getprop', 'ro.build.version.release', ';', 'getprop', 'ro.build.version.sdk'], environment: null),
           cmd(command: 'dumpsys', arguments: <String>['power']),
           cmd(command: 'input', arguments: <String>['keyevent', '26']),
         ]);
@@ -89,6 +104,7 @@ void main() {
         FakeDevice.pretendAwake();
         await device.unlock();
         expectLog(<CommandArgs>[
+          cmd(command: 'getprop', arguments: <String>['ro.bootimage.build.fingerprint', ';', 'getprop', 'ro.build.version.release', ';', 'getprop', 'ro.build.version.sdk'], environment: null),
           cmd(command: 'dumpsys', arguments: <String>['power']),
           cmd(command: 'input', arguments: <String>['keyevent', '82']),
         ]);
@@ -99,6 +115,7 @@ void main() {
       test('tap', () async {
         await device.tap(100, 200);
         expectLog(<CommandArgs>[
+          cmd(command: 'getprop', arguments: <String>['ro.bootimage.build.fingerprint', ';', 'getprop', 'ro.build.version.release', ';', 'getprop', 'ro.build.version.sdk'], environment: null),
           cmd(command: 'input', arguments: <String>['tap', '100', '200']),
         ]);
       });
@@ -111,25 +128,26 @@ void expectLog(List<CommandArgs> log) {
 }
 
 CommandArgs cmd({
-  String command,
-  List<String> arguments,
-  Map<String, String> environment,
+  required String command,
+  List<String>? arguments,
+  Map<String, String>? environment,
 }) {
-  return new CommandArgs(
+  return CommandArgs(
     command: command,
     arguments: arguments,
     environment: environment,
   );
 }
 
-typedef dynamic ExitErrorFactory();
+typedef ExitErrorFactory = dynamic Function();
 
+@immutable
 class CommandArgs {
-  CommandArgs({ this.command, this.arguments, this.environment });
+  const CommandArgs({ required this.command, this.arguments, this.environment });
 
   final String command;
-  final List<String> arguments;
-  final Map<String, String> environment;
+  final List<String>? arguments;
+  final Map<String, String>? environment;
 
   @override
   String toString() => 'CommandArgs(command: $command, arguments: $arguments, environment: $environment)';
@@ -138,30 +156,27 @@ class CommandArgs {
   bool operator==(Object other) {
     if (other.runtimeType != CommandArgs)
       return false;
-
-    final CommandArgs otherCmd = other;
-    return otherCmd.command == command &&
-      const ListEquality<String>().equals(otherCmd.arguments, arguments) &&
-      const MapEquality<String, String>().equals(otherCmd.environment, environment);
+    return other is CommandArgs
+        && other.command == command
+        && const ListEquality<String>().equals(other.arguments, arguments)
+        && const MapEquality<String, String>().equals(other.environment, environment);
   }
 
   @override
-  int get hashCode => 17 * (17 * command.hashCode + _hashArguments) + _hashEnvironment;
-
-  int get _hashArguments => arguments != null
-    ? const ListEquality<String>().hash(arguments)
-    : null.hashCode;
-
-  int get _hashEnvironment => environment != null
-    ? const MapEquality<String, String>().hash(environment)
-    : null.hashCode;
+  int get hashCode {
+    return Object.hash(
+      command,
+      Object.hashAll(arguments ?? const <String>[]),
+      Object.hashAllUnordered(environment?.keys ?? const <String>[]),
+      Object.hashAllUnordered(environment?.values ?? const <String>[]),
+    );
+  }
 }
 
 class FakeDevice extends AndroidDevice {
-  FakeDevice({String deviceId}) : super(deviceId: deviceId);
+  FakeDevice({required String deviceId}) : super(deviceId: deviceId);
 
   static String output = '';
-  static ExitErrorFactory exitErrorFactory = () => null;
 
   static List<CommandArgs> commandLog = <CommandArgs>[];
 
@@ -181,9 +196,15 @@ class FakeDevice extends AndroidDevice {
     ''';
   }
 
+  static void pretendArm64() {
+    output = '''
+      arm64
+    ''';
+  }
+
   @override
-  Future<String> shellEval(String command, List<String> arguments, { Map<String, String> environment }) async {
-    commandLog.add(new CommandArgs(
+  Future<String> shellEval(String command, List<String> arguments, { Map<String, String>? environment, bool silent = false }) async {
+    commandLog.add(CommandArgs(
       command: command,
       arguments: arguments,
       environment: environment,
@@ -192,14 +213,11 @@ class FakeDevice extends AndroidDevice {
   }
 
   @override
-  Future<Null> shellExec(String command, List<String> arguments, { Map<String, String> environment }) async {
-    commandLog.add(new CommandArgs(
+  Future<void> shellExec(String command, List<String> arguments, { Map<String, String>? environment, bool silent = false }) async {
+    commandLog.add(CommandArgs(
       command: command,
       arguments: arguments,
       environment: environment,
     ));
-    final dynamic exitError = exitErrorFactory();
-    if (exitError != null)
-      throw exitError;
   }
 }

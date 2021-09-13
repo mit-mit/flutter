@@ -1,17 +1,16 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 class TestTransition extends AnimatedWidget {
   const TestTransition({
-    Key key,
-    this.childFirstHalf,
-    this.childSecondHalf,
-    Animation<double> animation
+    Key? key,
+    required this.childFirstHalf,
+    required this.childSecondHalf,
+    required Animation<double> animation,
   }) : super(key: key, listenable: animation);
 
   final Widget childFirstHalf;
@@ -19,7 +18,7 @@ class TestTransition extends AnimatedWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> animation = listenable;
+    final Animation<double> animation = listenable as Animation<double>;
     if (animation.value >= 0.5)
       return childSecondHalf;
     return childFirstHalf;
@@ -27,7 +26,11 @@ class TestTransition extends AnimatedWidget {
 }
 
 class TestRoute<T> extends PageRoute<T> {
-  TestRoute({ this.child, RouteSettings settings, this.barrierColor }) : super(settings: settings);
+  TestRoute({
+    required this.child,
+    required RouteSettings settings,
+    this.barrierColor,
+  }) : super(settings: settings);
 
   final Widget child;
 
@@ -35,10 +38,10 @@ class TestRoute<T> extends PageRoute<T> {
   Duration get transitionDuration => const Duration(milliseconds: 150);
 
   @override
-  final Color barrierColor;
+  final Color? barrierColor;
 
   @override
-  String get barrierLabel => null;
+  String? get barrierLabel => null;
 
   @override
   bool get maintainState => false;
@@ -55,7 +58,7 @@ void main() {
 
   testWidgets('Check onstage/offstage handling around transitions', (WidgetTester tester) async {
 
-    final GlobalKey insideKey = new GlobalKey();
+    final GlobalKey insideKey = GlobalKey();
 
     String state({ bool skipOffstage = true }) {
       String result = '';
@@ -77,42 +80,43 @@ void main() {
     }
 
     await tester.pumpWidget(
-      new MaterialApp(
+      MaterialApp(
         onGenerateRoute: (RouteSettings settings) {
           switch (settings.name) {
             case '/':
-              return new TestRoute<Null>(
+              return TestRoute<void>(
                 settings: settings,
-                child: new Builder(
+                child: Builder(
                   key: insideKey,
                   builder: (BuildContext context) {
-                    final PageRoute<void> route = ModalRoute.of(context);
-                    return new Column(
+                    final PageRoute<void> route = ModalRoute.of(context)! as PageRoute<void>;
+                    return Column(
                       children: <Widget>[
-                        new TestTransition(
+                        TestTransition(
                           childFirstHalf: const Text('A'),
                           childSecondHalf: const Text('B'),
-                          animation: route.animation
+                          animation: route.animation!,
                         ),
-                        new TestTransition(
+                        TestTransition(
                           childFirstHalf: const Text('C'),
                           childSecondHalf: const Text('D'),
-                          animation: route.secondaryAnimation
+                          animation: route.secondaryAnimation!,
                         ),
-                      ]
+                      ],
                     );
-                  }
-                )
+                  },
+                ),
               );
-            case '/2': return new TestRoute<Null>(settings: settings, child: const Text('E'));
-            case '/3': return new TestRoute<Null>(settings: settings, child: const Text('F'));
-            case '/4': return new TestRoute<Null>(settings: settings, child: const Text('G'));
+            case '/2': return TestRoute<void>(settings: settings, child: const Text('E'));
+            case '/3': return TestRoute<void>(settings: settings, child: const Text('F'));
+            case '/4': return TestRoute<void>(settings: settings, child: const Text('G'));
           }
-        }
-      )
+          return null;
+        },
+      ),
     );
 
-    final NavigatorState navigator = insideKey.currentContext.ancestorStateOfType(const TypeMatcher<NavigatorState>());
+    final NavigatorState navigator = insideKey.currentContext!.findAncestorStateOfType<NavigatorState>()!;
 
     expect(state(), equals('BC')); // transition ->1 is at 1.0
 
@@ -186,14 +190,15 @@ void main() {
 
   testWidgets('Check onstage/offstage handling of barriers around transitions', (WidgetTester tester) async {
     await tester.pumpWidget(
-      new MaterialApp(
+      MaterialApp(
         onGenerateRoute: (RouteSettings settings) {
           switch (settings.name) {
-            case '/': return new TestRoute<Null>(settings: settings, child: const Text('A'));
-            case '/1': return new TestRoute<Null>(settings: settings, barrierColor: const Color(0xFFFFFF00), child: const Text('B'));
+            case '/': return TestRoute<void>(settings: settings, child: const Text('A'));
+            case '/1': return TestRoute<void>(settings: settings, barrierColor: const Color(0xFFFFFF00), child: const Text('B'));
           }
-        }
-      )
+          return null;
+        },
+      ),
     );
     expect(find.byType(ModalBarrier), findsOneWidget);
 

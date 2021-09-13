@@ -1,8 +1,8 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
+import 'dart:ui' as ui show Brightness;
 
 import 'assertions.dart';
 import 'platform.dart';
@@ -19,13 +19,15 @@ import 'print.dart';
 /// override [debugPrint] themselves and want to check that their own custom
 /// value wasn't overridden by a test.
 ///
-/// See [https://docs.flutter.io/flutter/foundation/foundation-library.html] for
-/// a complete list.
+/// See [the foundation library](foundation/foundation-library.html)
+/// for a complete list.
 bool debugAssertAllFoundationVarsUnset(String reason, { DebugPrintCallback debugPrintOverride = debugPrintThrottled }) {
   assert(() {
     if (debugPrint != debugPrintOverride ||
-        debugDefaultTargetPlatformOverride != null)
-      throw new FlutterError(reason);
+        debugDefaultTargetPlatformOverride != null ||
+        debugDoublePrecision != null ||
+        debugBrightnessOverride != null)
+      throw FlutterError(reason);
     return true;
   }());
   return true;
@@ -46,25 +48,72 @@ bool debugInstrumentationEnabled = false;
 ///
 /// See also:
 ///
-///   * [Timeline], which is used to record synchronous tracing events for
-///     visualization in Chrome's tracing format. This method does not
-///     implicitly add any timeline events.
-Future<T> debugInstrumentAction<T>(String description, Future<T> action()) {
+///  * [Timeline], which is used to record synchronous tracing events for
+///    visualization in Chrome's tracing format. This method does not
+///    implicitly add any timeline events.
+Future<T> debugInstrumentAction<T>(String description, Future<T> Function() action) async {
   bool instrument = false;
-  assert(() { instrument = debugInstrumentationEnabled; return true; }());
+  assert(() {
+    instrument = debugInstrumentationEnabled;
+    return true;
+  }());
   if (instrument) {
-    final Stopwatch stopwatch = new Stopwatch()..start();
-    return action().whenComplete(() {
+    final Stopwatch stopwatch = Stopwatch()..start();
+    try {
+      return await action();
+    } finally {
       stopwatch.stop();
       debugPrint('Action "$description" took ${stopwatch.elapsed}');
-    });
+    }
   } else {
     return action();
   }
 }
 
-/// Arguments to whitelist [Timeline] events in order to be shown in the
-/// developer centric version of the Observatory Timeline.
-const Map<String, String> timelineWhitelistArguments = <String, String>{
-  'mode': 'basic'
+/// Argument passed to [dart:developer.Timeline] events in order to cause those
+/// events to be shown in the developer-centric version of the Observatory
+/// Timeline.
+///
+/// Generally these indicate landmark events such as the build phase or layout.
+///
+/// See also:
+///
+///  * [dart:developer.Timeline.startSync], which typically takes this value as
+///    its `arguments` argument.
+const Map<String, String> timelineArgumentsIndicatingLandmarkEvent = <String, String>{
+  'mode': 'basic',
 };
+
+/// Configure [debugFormatDouble] using [num.toStringAsPrecision].
+///
+/// Defaults to null, which uses the default logic of [debugFormatDouble].
+int? debugDoublePrecision;
+
+/// Formats a double to have standard formatting.
+///
+/// This behavior can be overridden by [debugDoublePrecision].
+String debugFormatDouble(double? value) {
+  if (value == null) {
+    return 'null';
+  }
+  if (debugDoublePrecision != null) {
+    return value.toStringAsPrecision(debugDoublePrecision!);
+  }
+  return value.toStringAsFixed(1);
+}
+
+/// A setting that can be used to override the platform [Brightness] exposed
+/// from [BindingBase.platformDispatcher].
+///
+/// See also:
+///
+///  * [WidgetsApp], which uses the [debugBrightnessOverride] setting in debug mode
+///    to construct a [MediaQueryData].
+ui.Brightness? debugBrightnessOverride;
+
+/// The address for the active DevTools server used for debugging this
+/// application.
+String? activeDevToolsServerAddress;
+
+/// The uri for the connected vm service protocol.
+String? connectedVmServiceUri;

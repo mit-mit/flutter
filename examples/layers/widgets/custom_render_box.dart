@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -28,10 +28,10 @@ class RenderDots extends RenderConstrainedBox {
   @override
   void paint(PaintingContext context, Offset offset) {
     final Canvas canvas = context.canvas;
-    canvas.drawRect(offset & size, new Paint()..color = const Color(0xFF0000FF));
+    canvas.drawRect(offset & size, Paint()..color = const Color(0xFF0000FF));
 
-    final Paint paint = new Paint()..color = const Color(0xFF00FF00);
-    for (Offset point in _dots.values)
+    final Paint paint = Paint()..color = const Color(0xFF00FF00);
+    for (final Offset point in _dots.values)
       canvas.drawCircle(point, 50.0, paint);
 
     super.paint(context, offset);
@@ -39,10 +39,10 @@ class RenderDots extends RenderConstrainedBox {
 }
 
 class Dots extends SingleChildRenderObjectWidget {
-  const Dots({ Key key, Widget child }) : super(key: key, child: child);
+  const Dots({ Key? key, Widget? child }) : super(key: key, child: child);
 
   @override
-  RenderDots createRenderObject(BuildContext context) => new RenderDots();
+  RenderDots createRenderObject(BuildContext context) => RenderDots();
 }
 
 void main() {

@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,27 +10,31 @@ import 'keys.dart' as keys;
 void main() {
   enableFlutterDriverExtension();
 
-  runApp(new MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
+    return MaterialApp(
       title: 'Keyboard & TextField',
-      theme: new ThemeData(primarySwatch: Colors.blue),
-      home: new MyHomePage(),
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key}) : super(key: key);
+
   @override
-  _MyHomePageState createState() => new _MyHomePageState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final ScrollController _controller = new ScrollController();
+  final ScrollController _controller = ScrollController();
   double offset = 0.0;
 
   @override
@@ -45,18 +49,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      body: new Column(
+    return Scaffold(
+      body: Column(
         children: <Widget>[
-          new Text('$offset',
+          Text('$offset',
             key: const ValueKey<String>(keys.kOffsetText),
           ),
-          new Expanded(
-            child: new ListView(
+          Expanded(
+            child: ListView(
               key: const ValueKey<String>(keys.kListView),
               controller: _controller,
               children: <Widget>[
-                new Container(
+                Container(
                   height: MediaQuery.of(context).size.height,
                 ),
                 const TextField(

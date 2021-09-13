@@ -1,8 +1,6 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-import 'dart:async';
 
 import 'package:flutter_devicelab/framework/framework.dart';
 import 'package:flutter_devicelab/framework/utils.dart';
@@ -24,16 +22,16 @@ class HelloWorldMemoryTest extends MemoryTest {
       '--verbose',
       '--release',
       '--no-resident',
-      '-d', device.deviceId,
+      '-d', device!.deviceId,
       test,
     ]);
-    await new Future<Null>.delayed(const Duration(milliseconds: 1500));
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
     await recordStart();
-    await new Future<Null>.delayed(const Duration(milliseconds: 3000));
+    await Future<void>.delayed(const Duration(milliseconds: 3000));
     await recordEnd();
   }
 }
 
-Future<Null> main() async {
-  await task(new HelloWorldMemoryTest().run);
+Future<void> main() async {
+  await task(HelloWorldMemoryTest().run);
 }

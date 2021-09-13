@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -17,119 +17,106 @@ import 'theme.dart';
 /// See also:
 ///
 ///  * [GridTile]
-///  * <https://material.google.com/components/grid-lists.html#grid-lists-specs>
+///  * <https://material.io/design/components/image-lists.html#anatomy>
 class GridTileBar extends StatelessWidget {
   /// Creates a grid tile bar.
   ///
   /// Typically used to with [GridTile].
   const GridTileBar({
-    Key key,
+    Key? key,
     this.backgroundColor,
     this.leading,
     this.title,
     this.subtitle,
-    this.trailing
+    this.trailing,
   }) : super(key: key);
 
   /// The color to paint behind the child widgets.
   ///
   /// Defaults to transparent.
-  final Color backgroundColor;
+  final Color? backgroundColor;
 
   /// A widget to display before the title.
   ///
   /// Typically an [Icon] or an [IconButton] widget.
-  final Widget leading;
+  final Widget? leading;
 
   /// The primary content of the list item.
   ///
   /// Typically a [Text] widget.
-  final Widget title;
+  final Widget? title;
 
   /// Additional content displayed below the title.
   ///
   /// Typically a [Text] widget.
-  final Widget subtitle;
+  final Widget? subtitle;
 
   /// A widget to display after the title.
   ///
   /// Typically an [Icon] or an [IconButton] widget.
-  final Widget trailing;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    BoxDecoration decoration;
+    BoxDecoration? decoration;
     if (backgroundColor != null)
-      decoration = new BoxDecoration(color: backgroundColor);
+      decoration = BoxDecoration(color: backgroundColor);
 
-    final List<Widget> children = <Widget>[];
-    final EdgeInsetsDirectional padding = new EdgeInsetsDirectional.only(
+    final EdgeInsetsDirectional padding = EdgeInsetsDirectional.only(
       start: leading != null ? 8.0 : 16.0,
       end: trailing != null ? 8.0 : 16.0,
     );
 
-    if (leading != null)
-      children.add(new Padding(padding: const EdgeInsetsDirectional.only(end: 8.0), child: leading));
-
-    final ThemeData theme = Theme.of(context);
-    final ThemeData darkTheme = new ThemeData(
-      brightness: Brightness.dark,
-      accentColor: theme.accentColor,
-      accentColorBrightness: theme.accentColorBrightness
-    );
-    if (title != null && subtitle != null) {
-      children.add(
-        new Expanded(
-          child: new Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              new DefaultTextStyle(
-                style: darkTheme.textTheme.subhead,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                child: title
-              ),
-              new DefaultTextStyle(
-                style: darkTheme.textTheme.caption,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                child: subtitle
-              )
-            ]
-          )
-        )
-      );
-    } else if (title != null || subtitle != null) {
-      children.add(
-        new Expanded(
-          child: new DefaultTextStyle(
-            style: darkTheme.textTheme.subhead,
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
-            child: title ?? subtitle
-          )
-        )
-      );
-    }
-
-    if (trailing != null)
-      children.add(new Padding(padding: const EdgeInsetsDirectional.only(start: 8.0), child: trailing));
-
-    return new Container(
+    final ThemeData darkTheme = ThemeData.dark();
+    return Container(
       padding: padding,
       decoration: decoration,
       height: (title != null && subtitle != null) ? 68.0 : 48.0,
-      child: new Theme(
+      child: Theme(
         data: darkTheme,
         child: IconTheme.merge(
           data: const IconThemeData(color: Colors.white),
-          child: new Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
-            children: children
-          )
-        )
-      )
+            children: <Widget>[
+              if (leading != null)
+                Padding(padding: const EdgeInsetsDirectional.only(end: 8.0), child: leading),
+              if (title != null && subtitle != null)
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      DefaultTextStyle(
+                        style: darkTheme.textTheme.subtitle1!,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        child: title!,
+                      ),
+                      DefaultTextStyle(
+                        style: darkTheme.textTheme.caption!,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        child: subtitle!,
+                      ),
+                    ],
+                  ),
+                )
+              else if (title != null || subtitle != null)
+                Expanded(
+                  child: DefaultTextStyle(
+                    style: darkTheme.textTheme.subtitle1!,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    child: title ?? subtitle!,
+                  ),
+                ),
+              if (trailing != null)
+                Padding(padding: const EdgeInsetsDirectional.only(start: 8.0), child: trailing),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

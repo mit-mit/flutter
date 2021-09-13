@@ -1,6 +1,7 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 
 import 'dart:math' as math;
 import 'dart:ui' show Color, lerpDouble, hashValues;
@@ -8,7 +9,7 @@ import 'dart:ui' show Color, lerpDouble, hashValues;
 import 'package:flutter/foundation.dart';
 
 double _getHue(double red, double green, double blue, double max, double delta) {
-  double hue;
+  late double hue;
   if (max == 0.0) {
     hue = 0.0;
   } else if (max == red) {
@@ -59,7 +60,7 @@ Color _colorFromHue(
     green = 0.0;
     blue = secondary;
   }
-  return new Color.fromARGB((alpha * 0xFF).round(), ((red + match) * 0xFF).round(), ((green + match) * 0xFF).round(), ((blue + match) * 0xFF).round());
+  return Color.fromARGB((alpha * 0xFF).round(), ((red + match) * 0xFF).round(), ((green + match) * 0xFF).round(), ((blue + match) * 0xFF).round());
 }
 
 /// A color represented using [alpha], [hue], [saturation], and [value].
@@ -78,10 +79,10 @@ Color _colorFromHue(
 ///
 /// See also:
 ///
-///   * [HSLColor], a color that uses a color space based on human perception of
-///     colored light.
-///   * [HSV and HSL](https://en.wikipedia.org/wiki/HSL_and_HSV) Wikipedia
-///     article, which this implementation is based upon.
+///  * [HSLColor], a color that uses a color space based on human perception of
+///    colored light.
+///  * [HSV and HSL](https://en.wikipedia.org/wiki/HSL_and_HSV) Wikipedia
+///    article, which this implementation is based upon.
 @immutable
 class HSVColor {
   /// Creates a color.
@@ -89,18 +90,18 @@ class HSVColor {
   /// All the arguments must not be null and be in their respective ranges. See
   /// the fields for each parameter for a description of their ranges.
   const HSVColor.fromAHSV(this.alpha, this.hue, this.saturation, this.value)
-      : assert(alpha != null),
-        assert(hue != null),
-        assert(saturation != null),
-        assert(value != null),
-        assert(alpha >= 0.0),
-        assert(alpha <= 1.0),
-        assert(hue >= 0.0),
-        assert(hue <= 360.0),
-        assert(saturation >= 0.0),
-        assert(saturation <= 1.0),
-        assert(value >= 0.0),
-        assert(value <= 1.0);
+    : assert(alpha != null),
+      assert(hue != null),
+      assert(saturation != null),
+      assert(value != null),
+      assert(alpha >= 0.0),
+      assert(alpha <= 1.0),
+      assert(hue >= 0.0),
+      assert(hue <= 360.0),
+      assert(saturation >= 0.0),
+      assert(saturation <= 1.0),
+      assert(value >= 0.0),
+      assert(value <= 1.0);
 
   /// Creates an [HSVColor] from an RGB [Color].
   ///
@@ -119,7 +120,7 @@ class HSVColor {
     final double hue = _getHue(red, green, blue, max, delta);
     final double saturation = max == 0.0 ? 0.0 : delta / max;
 
-    return new HSVColor.fromAHSV(alpha, hue, saturation, max);
+    return HSVColor.fromAHSV(alpha, hue, saturation, max);
   }
 
   /// Alpha, from 0.0 to 1.0. The describes the transparency of the color.
@@ -147,25 +148,25 @@ class HSVColor {
   /// Returns a copy of this color with the [alpha] parameter replaced with the
   /// given value.
   HSVColor withAlpha(double alpha) {
-    return new HSVColor.fromAHSV(alpha, hue, saturation, value);
+    return HSVColor.fromAHSV(alpha, hue, saturation, value);
   }
 
   /// Returns a copy of this color with the [hue] parameter replaced with the
   /// given value.
   HSVColor withHue(double hue) {
-    return new HSVColor.fromAHSV(alpha, hue, saturation, value);
+    return HSVColor.fromAHSV(alpha, hue, saturation, value);
   }
 
   /// Returns a copy of this color with the [saturation] parameter replaced with
   /// the given value.
   HSVColor withSaturation(double saturation) {
-    return new HSVColor.fromAHSV(alpha, hue, saturation, value);
+    return HSVColor.fromAHSV(alpha, hue, saturation, value);
   }
 
   /// Returns a copy of this color with the [value] parameter replaced with the
   /// given value.
   HSVColor withValue(double value) {
-    return new HSVColor.fromAHSV(alpha, hue, saturation, value);
+    return HSVColor.fromAHSV(alpha, hue, saturation, value);
   }
 
   /// Returns this color in RGB.
@@ -194,53 +195,41 @@ class HSVColor {
   /// that will interpolate from a transparent red and cycle through the hues to
   /// match the target color, regardless of what that color's hue is.
   ///
-  /// The `t` argument represents position on the timeline, with 0.0 meaning
-  /// that the interpolation has not started, returning `a` (or something
-  /// equivalent to `a`), 1.0 meaning that the interpolation has finished,
-  /// returning `b` (or something equivalent to `b`), and values in between
-  /// meaning that the interpolation is at the relevant point on the timeline
-  /// between `a` and `b`. The interpolation can be extrapolated beyond 0.0 and
-  /// 1.0, so negative values and values greater than 1.0 are valid (and can
-  /// easily be generated by curves such as [Curves.elasticInOut]).
+  /// {@macro dart.ui.shadow.lerp}
   ///
   /// Values outside of the valid range for each channel will be clamped.
-  ///
-  /// Values for `t` are usually obtained from an [Animation<double>], such as
-  /// an [AnimationController].
-  static HSVColor lerp(HSVColor a, HSVColor b, double t) {
+  static HSVColor? lerp(HSVColor? a, HSVColor? b, double t) {
     assert(t != null);
     if (a == null && b == null)
       return null;
     if (a == null)
-      return b._scaleAlpha(t);
+      return b!._scaleAlpha(t);
     if (b == null)
       return a._scaleAlpha(1.0 - t);
-    return new HSVColor.fromAHSV(
-      lerpDouble(a.alpha, b.alpha, t).clamp(0.0, 1.0),
-      lerpDouble(a.hue, b.hue, t) % 360.0,
-      lerpDouble(a.saturation, b.saturation, t).clamp(0.0, 1.0),
-      lerpDouble(a.value, b.value, t).clamp(0.0, 1.0),
+    return HSVColor.fromAHSV(
+      lerpDouble(a.alpha, b.alpha, t)!.clamp(0.0, 1.0),
+      lerpDouble(a.hue, b.hue, t)! % 360.0,
+      lerpDouble(a.saturation, b.saturation, t)!.clamp(0.0, 1.0),
+      lerpDouble(a.value, b.value, t)!.clamp(0.0, 1.0),
     );
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
-    if (other is! HSVColor)
-      return false;
-    final HSVColor typedOther = other;
-    return typedOther.alpha == alpha
-        && typedOther.hue == hue
-        && typedOther.saturation == saturation
-        && typedOther.value == value;
+    return other is HSVColor
+        && other.alpha == alpha
+        && other.hue == hue
+        && other.saturation == saturation
+        && other.value == value;
   }
 
   @override
   int get hashCode => hashValues(alpha, hue, saturation, value);
 
   @override
-  String toString() => '$runtimeType($alpha, $hue, $saturation, $value)';
+  String toString() => '${objectRuntimeType(this, 'HSVColor')}($alpha, $hue, $saturation, $value)';
 }
 
 /// A color represented using [alpha], [hue], [saturation], and [lightness].
@@ -259,10 +248,10 @@ class HSVColor {
 ///
 /// See also:
 ///
-///   * [HSVColor], a color that uses a color space based on human perception of
-///     pigments (e.g. paint and printer's ink).
-///   * [HSV and HSL](https://en.wikipedia.org/wiki/HSL_and_HSV) Wikipedia
-///     article, which this implementation is based upon.
+///  * [HSVColor], a color that uses a color space based on human perception of
+///    pigments (e.g. paint and printer's ink).
+///  * [HSV and HSL](https://en.wikipedia.org/wiki/HSL_and_HSV) Wikipedia
+///    article, which this implementation is based upon.
 @immutable
 class HSLColor {
   /// Creates a color.
@@ -302,8 +291,8 @@ class HSLColor {
     // Saturation can exceed 1.0 with rounding errors, so clamp it.
     final double saturation = lightness == 1.0
       ? 0.0
-      : (delta / (1.0 - (2.0 * lightness - 1.0).abs())).clamp(0.0, 1.0);
-    return new HSLColor.fromAHSL(alpha, hue, saturation, lightness);
+      : ((delta / (1.0 - (2.0 * lightness - 1.0).abs())).clamp(0.0, 1.0));
+    return HSLColor.fromAHSL(alpha, hue, saturation, lightness);
   }
 
   /// Alpha, from 0.0 to 1.0. The describes the transparency of the color.
@@ -333,25 +322,25 @@ class HSLColor {
   /// Returns a copy of this color with the alpha parameter replaced with the
   /// given value.
   HSLColor withAlpha(double alpha) {
-    return new HSLColor.fromAHSL(alpha, hue, saturation, lightness);
+    return HSLColor.fromAHSL(alpha, hue, saturation, lightness);
   }
 
   /// Returns a copy of this color with the [hue] parameter replaced with the
   /// given value.
   HSLColor withHue(double hue) {
-    return new HSLColor.fromAHSL(alpha, hue, saturation, lightness);
+    return HSLColor.fromAHSL(alpha, hue, saturation, lightness);
   }
 
   /// Returns a copy of this color with the [saturation] parameter replaced with
   /// the given value.
   HSLColor withSaturation(double saturation) {
-    return new HSLColor.fromAHSL(alpha, hue, saturation, lightness);
+    return HSLColor.fromAHSL(alpha, hue, saturation, lightness);
   }
 
   /// Returns a copy of this color with the [lightness] parameter replaced with
   /// the given value.
   HSLColor withLightness(double lightness) {
-    return new HSLColor.fromAHSL(alpha, hue, saturation, lightness);
+    return HSLColor.fromAHSL(alpha, hue, saturation, lightness);
   }
 
   /// Returns this HSL color in RGB.
@@ -393,40 +382,38 @@ class HSLColor {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static HSLColor lerp(HSLColor a, HSLColor b, double t) {
+  static HSLColor? lerp(HSLColor? a, HSLColor? b, double t) {
     assert(t != null);
     if (a == null && b == null)
       return null;
     if (a == null)
-      return b._scaleAlpha(t);
+      return b!._scaleAlpha(t);
     if (b == null)
       return a._scaleAlpha(1.0 - t);
-    return new HSLColor.fromAHSL(
-      lerpDouble(a.alpha, b.alpha, t).clamp(0.0, 1.0),
-      lerpDouble(a.hue, b.hue, t) % 360.0,
-      lerpDouble(a.saturation, b.saturation, t).clamp(0.0, 1.0),
-      lerpDouble(a.lightness, b.lightness, t).clamp(0.0, 1.0),
+    return HSLColor.fromAHSL(
+      lerpDouble(a.alpha, b.alpha, t)!.clamp(0.0, 1.0),
+      lerpDouble(a.hue, b.hue, t)! % 360.0,
+      lerpDouble(a.saturation, b.saturation, t)!.clamp(0.0, 1.0),
+      lerpDouble(a.lightness, b.lightness, t)!.clamp(0.0, 1.0),
     );
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
-    if (other is! HSLColor)
-      return false;
-    final HSLColor typedOther = other;
-    return typedOther.alpha == alpha
-        && typedOther.hue == hue
-        && typedOther.saturation == saturation
-        && typedOther.lightness == lightness;
+    return other is HSLColor
+        && other.alpha == alpha
+        && other.hue == hue
+        && other.saturation == saturation
+        && other.lightness == lightness;
   }
 
   @override
   int get hashCode => hashValues(alpha, hue, saturation, lightness);
 
   @override
-  String toString() => '$runtimeType($alpha, $hue, $saturation, $lightness)';
+  String toString() => '${objectRuntimeType(this, 'HSLColor')}($alpha, $hue, $saturation, $lightness)';
 }
 
 /// A color that has a small table of related colors called a "swatch".
@@ -439,6 +426,7 @@ class HSLColor {
 ///    primary and accent color swatches.
 ///  * [material.Colors], which defines all of the standard material design
 ///    colors.
+@immutable
 class ColorSwatch<T> extends Color {
   /// Creates a color that has a small table of related colors called a "swatch".
   ///
@@ -452,21 +440,59 @@ class ColorSwatch<T> extends Color {
   final Map<T, Color> _swatch;
 
   /// Returns an element of the swatch table.
-  Color operator [](T index) => _swatch[index];
+  Color? operator [](T index) => _swatch[index];
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (other.runtimeType != runtimeType)
       return false;
-    final ColorSwatch<T> typedOther = other;
-    return super == other && _swatch == typedOther._swatch;
+    return super == other
+        && other is ColorSwatch<T>
+        && mapEquals<T, Color>(other._swatch, _swatch);
   }
 
   @override
   int get hashCode => hashValues(runtimeType, value, _swatch);
 
   @override
-  String toString() => '$runtimeType(primary value: ${super.toString()})';
+  String toString() => '${objectRuntimeType(this, 'ColorSwatch')}(primary value: ${super.toString()})';
+}
+
+/// [DiagnosticsProperty] that has an [Color] as value.
+class ColorProperty extends DiagnosticsProperty<Color> {
+  /// Create a diagnostics property for [Color].
+  ///
+  /// The [showName], [style], and [level] arguments must not be null.
+  ColorProperty(
+    String name,
+    Color? value, {
+    bool showName = true,
+    Object? defaultValue = kNoDefaultValue,
+    DiagnosticsTreeStyle style = DiagnosticsTreeStyle.singleLine,
+    DiagnosticLevel level = DiagnosticLevel.info,
+  }) : assert(showName != null),
+       assert(style != null),
+       assert(level != null),
+       super(name, value,
+         defaultValue: defaultValue,
+         showName: showName,
+         style: style,
+         level: level,
+       );
+
+  @override
+  Map<String, Object?> toJsonMap(DiagnosticsSerializationDelegate delegate) {
+    final Map<String, Object?> json = super.toJsonMap(delegate);
+    if (value != null) {
+      json['valueProperties'] = <String, Object>{
+        'red': value!.red,
+        'green': value!.green,
+        'blue': value!.blue,
+        'alpha': value!.alpha,
+      };
+    }
+    return json;
+  }
 }

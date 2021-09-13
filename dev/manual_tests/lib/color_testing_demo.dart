@@ -1,30 +1,31 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 class ColorTestingDemo extends StatelessWidget {
-  const ColorTestingDemo({ Key key }) : super(key: key);
+  const ColorTestingDemo({ Key? key }) : super(key: key);
 
   static const String routeName = '/color_demo';
 
   @override
-  Widget build(BuildContext context) => new ColorDemoHome();
+  Widget build(BuildContext context) => const ColorDemoHome();
 }
 
 class ColorDemoHome extends StatelessWidget {
+  const ColorDemoHome({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: new AppBar(title: const Text('Color Demo')),
-      body: new ListView(
+    return Scaffold(
+      appBar: AppBar(title: const Text('Color Demo')),
+      body: ListView(
         padding: const EdgeInsets.all(5.0),
         children: <Widget>[
-          new Image.network('https://flutter.github.io/assets-for-api-docs/assets/tests/colors/gbr.png'),
-          new Image.network('https://flutter.github.io/assets-for-api-docs/assets/tests/colors/tf.png'),
-          new Image.network('https://flutter.github.io/assets-for-api-docs/assets/tests/colors/wide-gamut.png'),
+          Image.network('https://flutter.github.io/assets-for-api-docs/assets/tests/colors/gbr.png'),
+          Image.network('https://flutter.github.io/assets-for-api-docs/assets/tests/colors/tf.png'),
+          Image.network('https://flutter.github.io/assets-for-api-docs/assets/tests/colors/wide-gamut.png'),
           const GradientRow(leftColor: Color(0xFFFF0000), rightColor: Color(0xFF00FF00)),
           const GradientRow(leftColor: Color(0xFF0000FF), rightColor: Color(0xFFFFFF00)),
           const GradientRow(leftColor: Color(0xFFFF0000), rightColor: Color(0xFF0000FF)),
@@ -51,17 +52,17 @@ class ColorDemoHome extends StatelessWidget {
 }
 
 class GradientRow extends StatelessWidget {
-  const GradientRow({ Key key, this.rightColor, this.leftColor }) : super(key: key);
+  const GradientRow({ Key? key, required this.rightColor, required this.leftColor }) : super(key: key);
 
   final Color leftColor;
   final Color rightColor;
 
   @override
   Widget build(BuildContext context) {
-    return new Container(
+    return Container(
       height: 100.0,
-      decoration: new BoxDecoration(
-        gradient: new LinearGradient(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: <Color>[ leftColor, rightColor ],
@@ -72,13 +73,13 @@ class GradientRow extends StatelessWidget {
 }
 
 class ColorRow extends StatelessWidget {
-  const ColorRow({ Key key, this.color }) : super(key: key);
+  const ColorRow({ Key? key, required this.color }) : super(key: key);
 
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return new Container(
+    return Container(
       height: 100.0,
       color: color,
     );
@@ -86,8 +87,8 @@ class ColorRow extends StatelessWidget {
 }
 
 void main() {
-  runApp(new MaterialApp(
+  runApp(const MaterialApp(
     title: 'Color Testing Demo',
-    home: new ColorDemoHome(),
+    home: ColorDemoHome(),
   ));
 }

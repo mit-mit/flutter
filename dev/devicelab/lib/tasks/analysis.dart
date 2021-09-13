@@ -1,13 +1,12 @@
-// Copyright (c) 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
 
-import '../framework/framework.dart';
+import '../framework/task_result.dart';
 import '../framework/utils.dart';
 
 /// Run each benchmark this many times and compute average, min, max.
@@ -22,19 +21,21 @@ const int _kRunsPerBenchmark = 3;
 Directory get _megaGalleryDirectory => dir(path.join(Directory.systemTemp.path, 'mega_gallery'));
 
 Future<TaskResult> analyzerBenchmarkTask() async {
-  await inDirectory(flutterDirectory, () async {
+  await inDirectory<void>(flutterDirectory, () async {
     rmTree(_megaGalleryDirectory);
     mkdirs(_megaGalleryDirectory);
+    await flutter('update-packages');
     await dart(<String>['dev/tools/mega_gallery.dart', '--out=${_megaGalleryDirectory.path}']);
   });
 
-  final Map<String, dynamic> data = <String, dynamic>{};
-  data.addAll((await _run(new _FlutterRepoBenchmark())).asMap('flutter_repo', 'batch'));
-  data.addAll((await _run(new _FlutterRepoBenchmark(watch: true))).asMap('flutter_repo', 'watch'));
-  data.addAll((await _run(new _MegaGalleryBenchmark())).asMap('mega_gallery', 'batch'));
-  data.addAll((await _run(new _MegaGalleryBenchmark(watch: true))).asMap('mega_gallery', 'watch'));
+  final Map<String, dynamic> data = <String, dynamic>{
+    ...(await _run(_FlutterRepoBenchmark())).asMap('flutter_repo', 'batch'),
+    ...(await _run(_FlutterRepoBenchmark(watch: true))).asMap('flutter_repo', 'watch'),
+    ...(await _run(_MegaGalleryBenchmark())).asMap('mega_gallery', 'batch'),
+    ...(await _run(_MegaGalleryBenchmark(watch: true))).asMap('mega_gallery', 'watch'),
+  };
 
-  return new TaskResult.success(data, benchmarkScoreKeys: data.keys.toList());
+  return TaskResult.success(data, benchmarkScoreKeys: data.keys.toList());
 }
 
 class _BenchmarkResult {
@@ -56,7 +57,7 @@ class _BenchmarkResult {
 }
 
 abstract class _Benchmark {
-  _Benchmark({ this.watch = false });
+  _Benchmark({this.watch = false});
 
   final bool watch;
 
@@ -64,17 +65,15 @@ abstract class _Benchmark {
 
   Directory get directory;
 
-  List<String> get options {
-    final List<String> result = <String>[ '--benchmark' ];
-    if (watch)
-      result.add('--watch');
-    return result;
-  }
+  List<String> get options => <String>[
+        '--benchmark',
+        if (watch) '--watch',
+      ];
 
   Future<double> execute(int iteration, int targetIterations) async {
     section('Analyze $title ${watch ? 'with watcher' : ''} - ${iteration + 1} / $targetIterations');
-    final Stopwatch stopwatch = new Stopwatch();
-    await inDirectory(directory, () async {
+    final Stopwatch stopwatch = Stopwatch();
+    await inDirectory<void>(directory, () async {
       stopwatch.start();
       await flutter('analyze', options: options);
       stopwatch.stop();
@@ -85,7 +84,7 @@ abstract class _Benchmark {
 
 /// Times how long it takes to analyze the Flutter repository.
 class _FlutterRepoBenchmark extends _Benchmark {
-  _FlutterRepoBenchmark({ bool watch = false }) : super(watch: watch);
+  _FlutterRepoBenchmark({bool watch = false}) : super(watch: watch);
 
   @override
   String get title => 'Flutter repo';
@@ -95,14 +94,13 @@ class _FlutterRepoBenchmark extends _Benchmark {
 
   @override
   List<String> get options {
-    return super.options
-      ..add('--flutter-repo');
+    return super.options..add('--flutter-repo');
   }
 }
 
 /// Times how long it takes to analyze the generated "mega_gallery" app.
 class _MegaGalleryBenchmark extends _Benchmark {
-  _MegaGalleryBenchmark({ bool watch = false }) : super(watch: watch);
+  _MegaGalleryBenchmark({bool watch = false}) : super(watch: watch);
 
   @override
   String get title => 'mega gallery';
@@ -124,5 +122,5 @@ Future<_BenchmarkResult> _run(_Benchmark benchmark) async {
     0.0,
     (double previousValue, double element) => previousValue + element,
   );
-  return new _BenchmarkResult(sum / results.length, results.first, results.last);
+  return _BenchmarkResult(sum / results.length, results.first, results.last);
 }

@@ -1,6 +1,7 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 
 import 'dart:math' as math;
 
@@ -29,7 +30,7 @@ void paintZigZag(Canvas canvas, Paint paint, Offset start, Offset end, int zigs,
   canvas.rotate(math.atan2(end.dy, end.dx));
   final double length = end.distance;
   final double spacing = length / (zigs * 2.0);
-  final Path path = new Path()
+  final Path path = Path()
     ..moveTo(0.0, 0.0);
   for (int index = 0; index < zigs; index += 1) {
     final double x = (index * 2.0 + 1.0) * spacing;

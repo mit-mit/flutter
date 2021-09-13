@@ -1,179 +1,176 @@
-container:
-  image: gcr.io/flutter-cirrus/build-flutter-image:latest
+# CIRRUS CONFIGURATION FILE
+# https://cirrus-ci.org/guide/writing-tasks/
 
+environment:
+  # For details about environment variables used in Cirrus, including how encrypted variables work,
+  # see https://cirrus-ci.org/guide/writing-tasks/#environment-variables
+  # We change Flutter's directory to include a space in its name (see $CIRRUS_WORKING_DIR) so that
+  # we constantly test path names with spaces in them. The FLUTTER_SDK_PATH_WITH_SPACE variable must
+  # therefore have a space in it.
+  FLUTTER_SDK_PATH_WITH_SPACE: "flutter sdk"
+  # We force BOT to true so that all our tools know we're in a CI environment. This avoids any
+  # dependency on precisely how Cirrus is detected by our tools.
+  BOT: "true"
+
+gcp_credentials: ENCRYPTED[!0e63b52bd7e4fda1cd7b7bf2b4fe515a27fadbeaced01f5ad8b699b81d3611ed64c5d3271bcd8426dd914ef41cba48a0!]
+
+# LINUX SHARDS
 task:
-  env:
-    # Name the SDK directory to include a space so that we constantly
-    # test path names with spaces in them.
-    CIRRUS_WORKING_DIR: "/tmp/flutter sdk"
+  gke_container:
+    dockerfile: "dev/ci/docker_linux/Dockerfile"
+    builder_image_name: docker-builder # gce vm image
+    builder_image_project: flutter-cirrus
+    cluster_name: test-cluster
+    zone: us-central1-a
+    namespace: default
+    cpu: $CPU
+    memory: $MEMORY
+    use_in_memory_disk: $USE_IN_MEMORY_DISK
+  environment:
+    # We shrink our default resource requirement as much as possible because that way we are more
+    # likely to get scheduled. We require 4G of RAM because most of the shards (all but one as of
+    # October 2019) just get OOM-killed with less. Some shards may need more. When increasing the
+    # requirements for select shards, please leave a comment on those shards saying when you
+    # increased the requirements, what numbers you tried, and what the results were.
+    CPU: 1 # 0.1-8 without compute credits, 0.1-30 with (yes, you can go fractional)
+    MEMORY: 4G # 256M-24G without compute credits, 256M-90G with
+    CIRRUS_WORKING_DIR: "/tmp/$FLUTTER_SDK_PATH_WITH_SPACE"
+    CIRRUS_DOCKER_CONTEXT: "dev/"
     PATH: "$CIRRUS_WORKING_DIR/bin:$CIRRUS_WORKING_DIR/bin/cache/dart-sdk/bin:$PATH"
-    ANDROID_HOME: "/opt/android_sdk"
-  git_fetch_script:
-    - git fetch origin
-    - git fetch origin master # To set FETCH_HEAD for "git merge-base" to work
+    ANDROID_SDK_ROOT: "/opt/android_sdk"
+    SHOULD_UPDATE_PACKAGES: 'TRUE' # can be overridden at the task level
+    USE_IN_MEMORY_DISK: false
   pub_cache:
     folder: $HOME/.pub-cache
     fingerprint_script: echo $OS; grep -r --include=pubspec.yaml 'PUBSPEC CHECKSUM' "$CIRRUS_WORKING_DIR"
+    reupload_on_changes: false
   flutter_pkg_cache:
     folder: bin/cache/pkg
-    fingerprint_script: echo $OS; cat bin/internal/engine.version
+    fingerprint_script: echo $OS; cat bin/internal/*.version
+    reupload_on_changes: false
   artifacts_cache:
     folder: bin/cache/artifacts
-    fingerprint_script: echo $OS; cat bin/internal/engine.version
-  setup_script: ./dev/bots/cirrus_setup.sh
-  matrix:
-    - name: docs
-      env:
-        SHARD: docs
-        # For uploading master docs to Firebase master branch staging site
-        FIREBASE_MASTER_TOKEN: ENCRYPTED[37e8b82f167864cae9a3f4d2cf3f37dea331d9375c295327c45de524f6c588fa6f6d63e5784f10f6d43ce29689f36c92]
-        # For uploading beta docs to Firebase public live site
-        FIREBASE_PUBLIC_TOKEN: ENCRYPTED[c422da192f06da7b4449ca8e7aa866dabeb8a0f8d7488497c2e7e447e6fd31d917e6c813db081dc4e2a7a63afdf41864]
-      docs_script: ./dev/bots/docs.sh
-    - name: deploy_gallery
-      only_if: $CIRRUS_BRANCH == 'dev'
-      depends_on:
-        - docs
-        - analyze
-        - tests-linux
-        - tool_tests-linux
-      env:
-        SHARD: deploy_gallery
-        GOOGLE_DEVELOPER_SERVICE_ACCOUNT_ACTOR_FASTLANE: ENCRYPTED[d9ac1462c3c556fc2f8165c9d5566a16497d8ebc38a50357f7f3abf136b7f83e1d1d76dde36fee356cb0f9ebf7a89346]
-        ANDROID_GALLERY_UPLOAD_KEY: ENCRYPTED[0b3e681b4507aec433ef29c79b715f15f8c75ecd25315ea286b0b2bcb8b28d578634eead5aa2c54086a25e8da1bb219a]
-      test_script: ./dev/bots/deploy_gallery.sh
-    - name: analyze
-      env:
-        SHARD: analyze
-      test_script:
-        - dart ./dev/bots/test.dart
-    - name: tests-linux
-      env:
-        SHARD: tests
-      test_script:
-        - dart ./dev/bots/test.dart
-      container:
-        cpu: 4
-        memory: 8G
-    - name: tool_tests-linux
-      env:
-        SHARD: tool_tests
-      test_script:
-        - dart ./dev/bots/test.dart
-      container:
-        cpu: 4
-        memory: 8G
-
-task:
-  windows_container:
-    image: cirrusci/windowsservercore:2016
-    os_version: 2016
-    cpu: 4
-  env:
-    CIRRUS_WORKING_DIR: "C:\\Windows\\Temp\\flutter sdk"
-  git_fetch_script:
-    - git fetch origin
-    - git fetch origin master # To set FETCH_HEAD for "git merge-base" to work
-  pub_cache:
-    folder: $APPDATA\Pub\Cache
-    fingerprint_script:
-      - ps:  $Env:OS; Get-ChildItem -Path "$Env:CIRRUS_WORKING_DIR" pubspec.yaml -Recurse | Select-String -Pattern "PUBSPEC CHECKSUM" -SimpleMatch
-  flutter_pkg_cache:
-    folder: bin\cache\pkg
-    fingerprint_script: echo %OS% & type bin\internal\engine.version
-  artifacts_cache:
-    folder: bin\cache\artifacts
-    fingerprint_script: echo %OS% & type bin\internal\engine.version
+    fingerprint_script: echo $OS; cat bin/internal/*.version
+    reupload_on_changes: false
   setup_script:
-    - bin\flutter.bat config --no-analytics
-    - bin\flutter.bat update-packages
-    - git fetch origin master
-  test_all_script:
-    - bin\cache\dart-sdk\bin\dart.exe -c dev\bots\test.dart
-  matrix:
-    - name: tests-windows
-      env:
-        SHARD: tests
-    - name: tool_tests-windows
-      env:
-        SHARD: tool_tests
-
-task:
-  name: deploy_gallery-macos
-  only_if: $CIRRUS_BRANCH == 'dev'
-  pub_cache:
-    folder: ~/.pub-cache
-  depends_on:
-    - analyze
-    - tests-macos
-    - tool_tests-macos
-  env:
-    # Name the SDK directory to include a space so that we constantly
-    # test path names with spaces in them.
-    CIRRUS_WORKING_DIR: "/tmp/flutter sdk"
-    SHARD: deploy_gallery
-    # Apple Certificates Match Passphrase
-    MATCH_PASSWORD: ENCRYPTED[db07f252234397090e3ec59152d9ec1831f5ecd0ef97d247b1dca757bbb9ef9b7c832a39bce2caf1949ccdf097e59a73]
-    # Apple Fastlane Password
-    FASTLANE_PASSWORD: ENCRYPTED[0bf9bb0cc2cb32a0ed18470cf2c9df0f587cce5f8b04adbd6cff15ca5bde7a74f721ee580227b132ab6b032f08e52ae0]
-    # Private repo for publishing certificates.
-    PUBLISHING_MATCH_CERTIFICATE_REPO: git@github.com:flutter/private_publishing_certificates.git
-  osx_instance:
-    image: high-sierra-xcode-9.4.1
-  git_fetch_script:
+    - date
+    - git clean -xffd --exclude=bin/cache/
     - git fetch origin
-    - git fetch origin master # To set FETCH_HEAD
-  setup_script:
-    - bin/flutter config --no-analytics
-    - bin/flutter update-packages
-  test_all_script:
-    - ./dev/bots/deploy_gallery.sh
-
-task:
-  osx_instance:
-    image: high-sierra-xcode-9.4.1
-  depends_on:
-    - analyze
-  env:
-    CIRRUS_WORKING_DIR: "/tmp/flutter sdk"
-  git_fetch_script:
-    - git fetch origin
-    - git fetch origin master # To set FETCH_HEAD for "git merge-base" to work
-  pub_cache:
-    folder: $HOME/.pub-cache
-    fingerprint_script: echo $OS; grep -r --include=pubspec.yaml 'PUBSPEC CHECKSUM' "$CIRRUS_WORKING_DIR"
-  flutter_pkg_cache:
-    folder: bin/cache/pkg
-    fingerprint_script: echo $OS; cat bin/internal/engine.version
-  artifacts_cache:
-    folder: bin/cache/artifacts
-    fingerprint_script: echo $OS; cat bin/internal/engine.version
-  setup_script:
-    - bin/flutter config --no-analytics
-    - bin/flutter update-packages
-  test_all_script: |
-    ulimit -S -n 2048 # https://github.com/flutter/flutter/issues/2976
-    bin/cache/dart-sdk/bin/dart -c dev/bots/test.dart
+    - git fetch origin master # To set FETCH_HEAD, so that "git merge-base" works.
+    - flutter config --no-analytics
+    - if [ "$SHOULD_UPDATE_PACKAGES" == TRUE ]; then flutter update-packages; fi
+    - flutter doctor -v
+    - ./dev/bots/accept_android_sdk_licenses.sh
+    - date
+  on_failure:
+    failure_script:
+      - date
+      - which flutter
   matrix:
-    - name: tests-macos
-      env:
-        SHARD: tests
-    - name: tool_tests-macos
-      env:
-        SHARD: tool_tests
+    - name: analyze-linux # linux-only
+      only_if: "$CIRRUS_PR != ''"
+      environment:
+        # Empirically, the analyze-linux shard runs surprisingly fast (under 15 minutes) with just 1
+        # CPU.  We noticed OOM failures with 6GB 4/2020, so we increased the memory.
+        CPU: 1
+        MEMORY: 8G
+      script:
+        - dart --enable-asserts ./dev/bots/analyze.dart
 
+    - name: framework_tests-widgets-linux
+      only_if: "changesInclude('.cirrus.yml', 'dev/**', 'packages/flutter/**', 'packages/flutter_test/**', 'packages/flutter_tools/lib/src/test/**', 'bin/**') && $CIRRUS_PR != ''"
+      environment:
+        # We use 3 CPUs because that's the minimum required to get framework_tests-widgets-linux
+        # running fast enough that it is not the long pole, as of October 2019.
+        CPU: 3
+      script:
+        - dart --enable-asserts ./dev/bots/test.dart
 
-docker_builder:
-  # Only build a new docker image when we tag a release (for dev, beta, or release.)
-  only_if: $CIRRUS_TAG != ''
-  env:
-    GCLOUD_CREDENTIALS: ENCRYPTED[f7c098d4dd7f5ee1bfee0bb7e944cce72efbe10e97ad6440ae72de4de6a1c24d23f421a2619c668e94377fb64b0bb3e6]
-  depends_on:
-    - docs
-    - analyze
-    - tests-linux
-    - tool_tests-linux
-  build_script: "$CIRRUS_WORKING_DIR/dev/ci/docker_linux/docker_build.sh"
-  login_script: "$CIRRUS_WORKING_DIR/dev/ci/docker_linux/docker_login.sh"
-  push_script: "$CIRRUS_WORKING_DIR/dev/ci/docker_linux/docker_push.sh"
+    - name: framework_tests-libraries-linux
+      only_if: "changesInclude('.cirrus.yml', 'dev/**', 'packages/flutter/**', 'packages/flutter_test/**', 'packages/flutter_tools/lib/src/test/**', 'bin/**') && $CIRRUS_PR != ''"
+      environment:
+        # We use 3 CPUs because that's the minimum required to get the
+        # framework_tests-libraries-linux shard running fast enough that it is not the long pole, as
+        # of October 2019.
+        CPU: 3
+      script:
+        - dart --enable-asserts ./dev/bots/test.dart
 
+    - name: framework_tests-misc-linux
+      # this includes the tests for directories in dev/
+      only_if: "changesInclude('.cirrus.yml', 'dev/**', 'packages/flutter/**', 'packages/flutter_goldens/**', 'packages/flutter_test/**', 'packages/flutter_tools/lib/src/test/**', 'bin/**') && $CIRRUS_PR != ''"
+      environment:
+        # We use 3 CPUs because that's the minimum required to get framework_tests-misc-linux
+        # running fast enough that it is not the long pole, as of October 2019.
+        CPU: 3
+      script:
+        - dart --enable-asserts ./dev/bots/test.dart
+
+    - name: tool_tests-general-linux
+      only_if: "changesInclude('.cirrus.yml', 'dev/**', 'packages/flutter_tools/**', 'bin/**') && $CIRRUS_PR != ''"
+      environment:
+        # As of November 2019, the tool_tests-general-linux shard got faster with more CPUs up to 4
+        # CPUs, and needed at least 10G of RAM to not run out of memory.
+        CPU: 4
+        MEMORY: 10G
+        SHOULD_UPDATE_PACKAGES: "FALSE"
+      script:
+        - (cd packages/flutter_tools; dart __deprecated_pub get)
+        - (cd packages/flutter_tools/test/data/asset_test/main; dart __deprecated_pub get)
+        - (cd packages/flutter_tools/test/data/asset_test/font; dart __deprecated_pub get)
+        - (cd dev/bots; dart __deprecated_pub get)
+        - dart --enable-asserts ./dev/bots/test.dart
+
+    - name: tool_tests-commands-linux
+      only_if: "changesInclude('.cirrus.yml', 'dev/**', 'packages/flutter_tools/**', 'bin/**') && $CIRRUS_PR != ''"
+      environment:
+        # As of October 2019, the tool_tests-commands-linux shard got faster with more CPUs up to 6
+        # CPUs, and needed at least 8G of RAM to not run out of memory.
+        # Increased to 10GB on 19th Nov 2019 due to significant number of OOMKilled failures on PR builds.
+        CPU: 6
+        MEMORY: 10G
+        SHOULD_UPDATE_PACKAGES: "FALSE"
+      script:
+        - (cd packages/flutter_tools; dart __deprecated_pub get)
+        - (cd dev/bots; dart __deprecated_pub get)
+        - dart --enable-asserts ./dev/bots/test.dart
+
+    - name: docs-linux # linux-only
+      environment:
+        CPU: 4
+        MEMORY: 12G
+      only_if: "$CIRRUS_PR != ''"
+      script:
+        - ./dev/bots/docs.sh
+
+    - name: customer_testing-linux
+      only_if: "$CIRRUS_PR != ''"
+      environment:
+        # Empirically, this shard runs fine at 1 CPU and 4G RAM as of October 2019. We will probably
+        # want to grow this container when we invite people to add their tests in large numbers.
+        SHOULD_UPDATE_PACKAGES: "FALSE"
+      script:
+        # Cirrus doesn't give us the master branch, so we have to fetch it for ourselves,
+        # otherwise we won't be able to figure out how old or new our current branch is.
+        - git config user.email "cirrus-bot@invalid"
+        - git fetch origin master:master
+        # The actual logic is in a shell script so that it can be shared between CIs.
+        - (cd dev/customer_testing/; ./ci.sh)
+
+    - name: web_smoke_test
+      only_if: "changesInclude('.cirrus.yml', 'examples/hello_world/**' ,'dev/**', 'packages/flutter/**', 'packages/flutter_test/**', 'packages/flutter_tools/lib/src/test/**', 'packages/flutter_web_plugins/**', 'bin/**') && $CIRRUS_PR != ''"
+      environment:
+        # Tests Hello World with Flutter Web Engine using Flutter Driver. Should not need more resources.
+        CPU: 2
+        MEMORY: 2G
+        CHROME_NO_SANDBOX: true
+      script:
+        - flutter config --enable-web
+        - git clone https://github.com/flutter/web_installers.git
+        - cd web_installers/packages/web_drivers/
+        - dart __deprecated_pub get
+        - dart lib/web_driver_installer.dart chromedriver --install-only
+        - chromedriver/chromedriver --port=4444 &
+        - sleep 1
+        - cd ../../../examples/hello_world/
+        - flutter drive --target=test_driver/smoke_web_engine.dart -d web-server --profile --browser-name=chrome

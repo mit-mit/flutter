@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,16 +10,16 @@ const List<int> kPointerActions = <int>[
   0, // DOWN
   1, // UP
   5, // POINTER_DOWN
-  6 // POINTER_UP
+  6, // POINTER_UP
 ];
 
-const double kDoubleErrorMargin = 0.0001;
+const double kDoubleErrorMargin = 1e-4;
 
 String diffMotionEvents(
   Map<String, dynamic> originalEvent,
   Map<String, dynamic> synthesizedEvent,
 ) {
-  final StringBuffer diff = new StringBuffer();
+  final StringBuffer diff = StringBuffer();
 
   diffMaps(originalEvent, synthesizedEvent, diff, excludeKeys: const <String>[
     'pointerProperties', // Compared separately.
@@ -27,6 +27,7 @@ String diffMotionEvents(
     'source', // Unused by Flutter.
     'deviceId', // Android documentation says that's an arbitrary number that shouldn't be depended on.
     'action', // Compared separately.
+    'motionEventId', // TODO(kaushikiska): add support for motion event diffing, https://github.com/flutter/flutter/issues/61022.
   ]);
 
   diffActions(diff, originalEvent, synthesizedEvent);
@@ -39,12 +40,12 @@ String diffMotionEvents(
 void diffActions(StringBuffer diffBuffer, Map<String, dynamic> originalEvent,
     Map<String, dynamic> synthesizedEvent) {
   final int synthesizedActionMasked =
-      getActionMasked(synthesizedEvent['action']);
-  final int originalActionMasked = getActionMasked(originalEvent['action']);
+      getActionMasked(synthesizedEvent['action'] as int);
+  final int originalActionMasked = getActionMasked(originalEvent['action'] as int);
   final String synthesizedActionName =
-      getActionName(synthesizedActionMasked, synthesizedEvent['action']);
+      getActionName(synthesizedActionMasked, synthesizedEvent['action'] as int);
   final String originalActionName =
-      getActionName(originalActionMasked, originalEvent['action']);
+      getActionName(originalActionMasked, originalEvent['action'] as int);
 
   if (synthesizedActionMasked != originalActionMasked)
     diffBuffer.write(
@@ -52,8 +53,8 @@ void diffActions(StringBuffer diffBuffer, Map<String, dynamic> originalEvent,
 
   if (kPointerActions.contains(originalActionMasked) &&
       originalActionMasked == synthesizedActionMasked) {
-    final int originalPointer = getPointerIdx(originalEvent['action']);
-    final int synthesizedPointer = getPointerIdx(synthesizedEvent['action']);
+    final int originalPointer = getPointerIdx(originalEvent['action'] as int);
+    final int synthesizedPointer = getPointerIdx(synthesizedEvent['action'] as int);
     if (originalPointer != synthesizedPointer)
       diffBuffer.write(
           'pointerIdx (expected: $originalPointer actual: $synthesizedPointer action: $originalActionName ');
@@ -63,9 +64,9 @@ void diffActions(StringBuffer diffBuffer, Map<String, dynamic> originalEvent,
 void diffPointerProperties(StringBuffer diffBuffer,
     Map<String, dynamic> originalEvent, Map<String, dynamic> synthesizedEvent) {
   final List<Map<dynamic, dynamic>> expectedList =
-      originalEvent['pointerProperties'].cast<Map<dynamic, dynamic>>();
+      (originalEvent['pointerProperties'] as List<dynamic>).cast<Map<dynamic, dynamic>>();
   final List<Map<dynamic, dynamic>> actualList =
-      synthesizedEvent['pointerProperties'].cast<Map<dynamic, dynamic>>();
+      (synthesizedEvent['pointerProperties'] as List<dynamic>).cast<Map<dynamic, dynamic>>();
 
   if (expectedList.length != actualList.length) {
     diffBuffer.write(
@@ -85,30 +86,13 @@ void diffPointerProperties(StringBuffer diffBuffer,
 void diffPointerCoordsList(StringBuffer diffBuffer,
     Map<String, dynamic> originalEvent, Map<String, dynamic> synthesizedEvent) {
   final List<Map<dynamic, dynamic>> expectedList =
-      originalEvent['pointerCoords'].cast<Map<dynamic, dynamic>>();
+      (originalEvent['pointerCoords'] as List<dynamic>).cast<Map<dynamic, dynamic>>();
   final List<Map<dynamic, dynamic>> actualList =
-      synthesizedEvent['pointerCoords'].cast<Map<dynamic, dynamic>>();
+      (synthesizedEvent['pointerCoords'] as List<dynamic>).cast<Map<dynamic, dynamic>>();
 
   if (expectedList.length != actualList.length) {
     diffBuffer.write(
         'pointerCoords (actual length: ${actualList.length}, expected length: ${expectedList.length} ');
-    return;
-  }
-
-  if (isSinglePointerAction(originalEvent['action'])) {
-    final int idx = getPointerIdx(originalEvent['action']);
-    final Map<String, dynamic> expected =
-        expectedList[idx].cast<String, dynamic>();
-    final Map<String, dynamic> actual = actualList[idx].cast<String, dynamic>();
-    diffPointerCoords(expected, actual, idx, diffBuffer);
-    // For POINTER_UP and POINTER_DOWN events the engine drops the data for all pointers
-    // but for the pointer that was taken up/down.
-    // See: https://github.com/flutter/flutter/issues/19882
-    //
-    // Until that issue is resolved, we only compare the pointer for which the action
-    // applies to here.
-    //
-    // TODO(amirh): Compare all pointers once the issue mentioned above is resolved.
     return;
   }
 
@@ -122,11 +106,7 @@ void diffPointerCoordsList(StringBuffer diffBuffer,
 
 void diffPointerCoords(Map<String, dynamic> expected,
     Map<String, dynamic> actual, int pointerIdx, StringBuffer diffBuffer) {
-  diffMaps(expected, actual, diffBuffer,
-      messagePrefix: '[pointerCoord $pointerIdx] ',
-      excludeKeys: <String>[
-        'size', // Currently the framework doesn't get the size from the engine.
-      ]);
+  diffMaps(expected, actual, diffBuffer, messagePrefix: '[pointerCoord $pointerIdx] ');
 }
 
 void diffMaps(
@@ -142,7 +122,7 @@ void diffMaps(
         '${messagePrefix}keys (expected: ${expected.keys} actual: ${actual.keys} ');
     return;
   }
-  for (String key in expected.keys) {
+  for (final String key in expected.keys) {
     if (excludeKeys.contains(key))
       continue;
     if (doublesApproximatelyMatch(expected[key], actual[key]))
@@ -153,12 +133,6 @@ void diffMaps(
           '$messagePrefix$key (expected: ${expected[key]} actual: ${actual[key]}) ');
     }
   }
-}
-
-bool isSinglePointerAction(int action) {
-  final int actionMasked = getActionMasked(action);
-  return actionMasked == 5 || // POINTER_DOWN
-      actionMasked == 6; // POINTER_UP
 }
 
 int getActionMasked(int action) => action & 0xff;
@@ -179,7 +153,7 @@ String getActionName(int actionMasked, int action) {
     'HOVER_ENTER',
     'HOVER_EXIT',
     'BUTTON_PRESS',
-    'BUTTON_RELEASE'
+    'BUTTON_RELEASE',
   ];
   if (actionMasked < actionNames.length)
     return '${actionNames[actionMasked]}($action)';

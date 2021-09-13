@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,27 +9,33 @@ import 'framework.dart';
 /// An interactive button within either material's [BottomNavigationBar]
 /// or the iOS themed [CupertinoTabBar] with an icon and title.
 ///
-/// This class is rarely used in isolation. Commonly embedded in one of the
-/// bottom navigation widgets above.
+/// This class is rarely used in isolation. It is typically embedded in one of
+/// the bottom navigation widgets above.
 ///
 /// See also:
 ///
 ///  * [BottomNavigationBar]
-///  * <https://material.google.com/components/bottom-navigation.html>
+///  * <https://material.io/design/components/bottom-navigation.html>
 ///  * [CupertinoTabBar]
 ///  * <https://developer.apple.com/ios/human-interface-guidelines/bars/tab-bars>
 class BottomNavigationBarItem {
   /// Creates an item that is used with [BottomNavigationBar.items].
   ///
-  /// The arguments [icon] and [title] should not be null.
+  /// The argument [icon] should not be null and the argument [label] should not be null when used in a Material Design's [BottomNavigationBar].
   const BottomNavigationBarItem({
-    @required this.icon,
-    @required this.title,
-    Widget activeIcon,
+    required this.icon,
+    @Deprecated(
+      'Use "label" instead, as it allows for an improved text-scaling experience. '
+      'This feature was deprecated after v1.19.0.',
+    )
+    this.title,
+    this.label,
+    Widget? activeIcon,
     this.backgroundColor,
-  }) : this.activeIcon = activeIcon ?? icon,
-       assert(icon != null),
-       assert(title != null);
+    this.tooltip,
+  }) : activeIcon = activeIcon ?? icon,
+       assert(label == null || title == null),
+       assert(icon != null);
 
   /// The icon of the item.
   ///
@@ -58,17 +64,28 @@ class BottomNavigationBarItem {
   ///
   /// See also:
   ///
-  ///   * [BottomNavigationBarItem.icon], for a description of how to pair icons.
+  ///  * [BottomNavigationBarItem.icon], for a description of how to pair icons.
   final Widget activeIcon;
 
-  /// The title of the item.
-  final Widget title;
+  /// The title of the item. If the title is not provided only the icon will be shown when not used in a Material Design [BottomNavigationBar].
+  ///
+  /// This field is deprecated, use [label] instead.
+  @Deprecated(
+    'Use "label" instead, as it allows for an improved text-scaling experience. '
+    'This feature was deprecated after v1.19.0.',
+  )
+  final Widget? title;
+
+  /// The text label for this [BottomNavigationBarItem].
+  ///
+  /// This will be used to create a [Text] widget to put in the bottom navigation bar.
+  final String? label;
 
   /// The color of the background radial animation for material [BottomNavigationBar].
   ///
   /// If the navigation bar's type is [BottomNavigationBarType.shifting], then
   /// the entire bar is flooded with the [backgroundColor] when this item is
-  /// tapped.
+  /// tapped. This will override [BottomNavigationBar.backgroundColor].
   ///
   /// Not used for [CupertinoTabBar]. Control the invariant bar color directly
   /// via [CupertinoTabBar.backgroundColor].
@@ -76,6 +93,15 @@ class BottomNavigationBarItem {
   /// See also:
   ///
   ///  * [Icon.color] and [ImageIcon.color] to control the foreground color of
-  ///     the icons themselves.
-  final Color backgroundColor;
+  ///    the icons themselves.
+  final Color? backgroundColor;
+
+  /// The text to display in the tooltip for this [BottomNavigationBarItem], when
+  /// the user long presses the item.
+  ///
+  /// The [Tooltip] will only appear on an item in a Material design [BottomNavigationBar], and
+  /// when the string is not empty.
+  ///
+  /// Defaults to null, in which case the [label] text will be used.
+  final String? tooltip;
 }

@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -20,52 +20,52 @@ const int maxIterations = 4;
 const Duration pauses = Duration(milliseconds: 500);
 
 Future<void> main() async {
-  final Completer<void> ready = new Completer<void>();
-  runApp(new GestureDetector(
+  final Completer<void> ready = Completer<void>();
+  runApp(GestureDetector(
     onTap: () {
       debugPrint('Received tap.');
       ready.complete();
     },
     behavior: HitTestBehavior.opaque,
-    child: new IgnorePointer(
+    child: const IgnorePointer(
       ignoring: true,
-      child: new ComplexLayoutApp(),
+      child: ComplexLayoutApp(),
     ),
   ));
-  await SchedulerBinding.instance.endOfFrame;
+  await SchedulerBinding.instance?.endOfFrame;
 
-  /// Wait 50ms to allow the GPU thread to actually put up the frame. (The
-  /// endOfFrame future ends when we send the data to the engine, before the GPU
-  /// thread has had a chance to rasterize, etc.)
-  await new Future<Null>.delayed(const Duration(milliseconds: 50));
+  /// Wait 50ms to allow the raster thread to actually put up the frame. (The
+  /// endOfFrame future ends when we send the data to the engine, before
+  /// the raster thread has had a chance to rasterize, etc.)
+  await Future<void>.delayed(const Duration(milliseconds: 50));
   debugPrint('==== MEMORY BENCHMARK ==== READY ====');
 
   await ready.future; // waits for tap sent by devicelab task
   debugPrint('Continuing...');
 
   // remove onTap handler, enable pointer events for app
-  runApp(new GestureDetector(
-    child: new IgnorePointer(
+  runApp(GestureDetector(
+    child: const IgnorePointer(
       ignoring: false,
-      child: new ComplexLayoutApp(),
+      child: ComplexLayoutApp(),
     ),
   ));
-  await SchedulerBinding.instance.endOfFrame;
+  await SchedulerBinding.instance?.endOfFrame;
 
-  final WidgetController controller = new LiveWidgetController(WidgetsBinding.instance);
+  final WidgetController controller = LiveWidgetController(WidgetsBinding.instance!);
 
   // Scroll down
   for (int iteration = 0; iteration < maxIterations; iteration += 1) {
     debugPrint('Scroll down... $iteration/$maxIterations');
     await controller.fling(find.byType(ListView), const Offset(0.0, -700.0), speed);
-    await new Future<Null>.delayed(pauses);
+    await Future<void>.delayed(pauses);
   }
 
   // Scroll up
   for (int iteration = 0; iteration < maxIterations; iteration += 1) {
     debugPrint('Scroll up... $iteration/$maxIterations');
     await controller.fling(find.byType(ListView), const Offset(0.0, 300.0), speed);
-    await new Future<Null>.delayed(pauses);
+    await Future<void>.delayed(pauses);
   }
 
   debugPrint('==== MEMORY BENCHMARK ==== DONE ====');

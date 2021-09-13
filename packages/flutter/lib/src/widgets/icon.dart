@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -21,6 +21,42 @@ import 'icon_theme_data.dart';
 /// Typically this is introduced automatically by the [WidgetsApp] or
 /// [MaterialApp].
 ///
+/// This widget assumes that the rendered icon is squared. Non-squared icons may
+/// render incorrectly.
+///
+/// {@tool snippet}
+///
+/// This example shows how to create a [Row] of [Icon]s in different colors and
+/// sizes. The first [Icon] uses a [semanticLabel] to announce in accessibility
+/// modes like TalkBack and VoiceOver.
+///
+/// ![A row of icons representing a pink heart, a green musical note, and a blue umbrella](https://flutter.github.io/assets-for-api-docs/assets/widgets/icon.png)
+///
+/// ```dart
+/// Row(
+///   mainAxisAlignment: MainAxisAlignment.spaceAround,
+///   children: const <Widget>[
+///     Icon(
+///       Icons.favorite,
+///       color: Colors.pink,
+///       size: 24.0,
+///       semanticLabel: 'Text to announce in accessibility modes',
+///     ),
+///     Icon(
+///       Icons.audiotrack,
+///       color: Colors.green,
+///       size: 30.0,
+///     ),
+///     Icon(
+///       Icons.beach_access,
+///       color: Colors.blue,
+///       size: 36.0,
+///     ),
+///   ],
+/// )
+/// ```
+/// {@end-tool}
+///
 /// See also:
 ///
 ///  * [IconButton], for interactive icons.
@@ -31,8 +67,9 @@ class Icon extends StatelessWidget {
   /// Creates an icon.
   ///
   /// The [size] and [color] default to the value given by the current [IconTheme].
-  const Icon(this.icon, {
-    Key key,
+  const Icon(
+    this.icon, {
+    Key? key,
     this.size,
     this.color,
     this.semanticLabel,
@@ -43,7 +80,7 @@ class Icon extends StatelessWidget {
   ///
   /// The icon can be null, in which case the widget will render as an empty
   /// space of the specified [size].
-  final IconData icon;
+  final IconData? icon;
 
   /// The size of the icon in logical pixels.
   ///
@@ -57,45 +94,46 @@ class Icon extends StatelessWidget {
   /// [IconButton.iconSize] instead, so that the [IconButton] can make the splash
   /// area the appropriate size as well. The [IconButton] uses an [IconTheme] to
   /// pass down the size to the [Icon].
-  final double size;
+  final double? size;
 
   /// The color to use when drawing the icon.
   ///
   /// Defaults to the current [IconTheme] color, if any.
   ///
-  /// The given color will be adjusted by the opacity of the current
+  /// The color (whether specified explicitly here or obtained from the
+  /// [IconTheme]) will be further adjusted by the opacity of the current
   /// [IconTheme], if any.
-  ///
   ///
   /// In material apps, if there is a [Theme] without any [IconTheme]s
   /// specified, icon colors default to white if the theme is dark
   /// and black if the theme is light.
   ///
-  /// If no [IconTheme] and no [Theme] is specified, icons will default to black.
+  /// If no [IconTheme] and no [Theme] is specified, icons will default to
+  /// black.
   ///
   /// See [Theme] to set the current theme and [ThemeData.brightness]
   /// for setting the current theme's brightness.
   ///
-  /// Typically, a material design color will be used, as follows:
+  /// {@tool snippet}
+  /// Typically, a Material Design color will be used, as follows:
   ///
   /// ```dart
-  ///  new Icon(
-  ///    icon: Icons.widgets,
-  ///    color: Colors.blue.shade400,
-  ///  ),
+  /// Icon(
+  ///   Icons.widgets,
+  ///   color: Colors.blue.shade400,
+  /// )
   /// ```
-  final Color color;
+  /// {@end-tool}
+  final Color? color;
 
   /// Semantic label for the icon.
   ///
   /// Announced in accessibility modes (e.g TalkBack/VoiceOver).
   /// This label does not show in the UI.
   ///
-  /// See also:
-  ///
-  ///  * [Semantics.label], which is set to [semanticLabel] in the underlying
-  ///    [Semantics] widget.
-  final String semanticLabel;
+  ///  * [SemanticsProperties.label], which is set to [semanticLabel] in the
+  ///    underlying	 [Semantics] widget.
+  final String? semanticLabel;
 
   /// The text direction to use for rendering the icon.
   ///
@@ -110,7 +148,7 @@ class Icon extends StatelessWidget {
   /// This property has no effect if the [icon]'s [IconData.matchTextDirection]
   /// field is false, but for consistency a text direction value must always be
   /// specified, either directly using this property or using [Directionality].
-  final TextDirection textDirection;
+  final TextDirection? textDirection;
 
   @override
   Widget build(BuildContext context) {
@@ -119,39 +157,40 @@ class Icon extends StatelessWidget {
 
     final IconThemeData iconTheme = IconTheme.of(context);
 
-    final double iconSize = size ?? iconTheme.size;
+    final double? iconSize = size ?? iconTheme.size;
 
     if (icon == null) {
-      return new Semantics(
+      return Semantics(
         label: semanticLabel,
-        child: new SizedBox(width: iconSize, height: iconSize)
+        child: SizedBox(width: iconSize, height: iconSize),
       );
     }
 
-    final double iconOpacity = iconTheme.opacity;
-    Color iconColor = color ?? iconTheme.color;
+    final double iconOpacity = iconTheme.opacity ?? 1.0;
+    Color iconColor = color ?? iconTheme.color!;
     if (iconOpacity != 1.0)
       iconColor = iconColor.withOpacity(iconColor.opacity * iconOpacity);
 
-    Widget iconWidget = new RichText(
+    Widget iconWidget = RichText(
+      overflow: TextOverflow.visible, // Never clip.
       textDirection: textDirection, // Since we already fetched it for the assert...
-      text: new TextSpan(
-        text: new String.fromCharCode(icon.codePoint),
-        style: new TextStyle(
+      text: TextSpan(
+        text: String.fromCharCode(icon!.codePoint),
+        style: TextStyle(
           inherit: false,
           color: iconColor,
           fontSize: iconSize,
-          fontFamily: icon.fontFamily,
-          package: icon.fontPackage,
+          fontFamily: icon!.fontFamily,
+          package: icon!.fontPackage,
         ),
       ),
     );
 
-    if (icon.matchTextDirection) {
+    if (icon!.matchTextDirection) {
       switch (textDirection) {
         case TextDirection.rtl:
-          iconWidget = new Transform(
-            transform: new Matrix4.identity()..scale(-1.0, 1.0, 1.0),
+          iconWidget = Transform(
+            transform: Matrix4.identity()..scale(-1.0, 1.0, 1.0),
             alignment: Alignment.center,
             transformHitTests: false,
             child: iconWidget,
@@ -162,13 +201,13 @@ class Icon extends StatelessWidget {
       }
     }
 
-    return new Semantics(
+    return Semantics(
       label: semanticLabel,
-      child: new ExcludeSemantics(
-        child: new SizedBox(
+      child: ExcludeSemantics(
+        child: SizedBox(
           width: iconSize,
           height: iconSize,
-          child: new Center(
+          child: Center(
             child: iconWidget,
           ),
         ),
@@ -179,8 +218,8 @@ class Icon extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(new DiagnosticsProperty<IconData>('icon', icon, ifNull: '<empty>', showName: false));
-    properties.add(new DoubleProperty('size', size, defaultValue: null));
-    properties.add(new DiagnosticsProperty<Color>('color', color, defaultValue: null));
+    properties.add(IconDataProperty('icon', icon, ifNull: '<empty>', showName: false));
+    properties.add(DoubleProperty('size', size, defaultValue: null));
+    properties.add(ColorProperty('color', color, defaultValue: null));
   }
 }

@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -67,7 +67,7 @@ Future<TestStepResult> _methodCallSuccessHandshake(
   dynamic result = nothing;
   dynamic error = nothing;
   try {
-    result = await channel.invokeMethod('success', arguments);
+    result = await channel.invokeMethod<dynamic>('success', arguments);
   } catch (e) {
     error = e;
   }
@@ -89,13 +89,13 @@ Future<TestStepResult> _methodCallErrorHandshake(
   final List<dynamic> received = <dynamic>[];
   channel.setMethodCallHandler((MethodCall call) async {
     received.add(call.arguments);
-    throw new PlatformException(
+    throw PlatformException(
         code: 'error', message: null, details: arguments);
   });
   dynamic errorDetails = nothing;
   dynamic error = nothing;
   try {
-    error = await channel.invokeMethod('error', arguments);
+    error = await channel.invokeMethod<dynamic>('error', arguments);
   } on PlatformException catch (e) {
     errorDetails = e.details;
   } catch (e) {
@@ -118,12 +118,12 @@ Future<TestStepResult> _methodCallNotImplementedHandshake(
   final List<dynamic> received = <dynamic>[];
   channel.setMethodCallHandler((MethodCall call) async {
     received.add(call.arguments);
-    throw new MissingPluginException();
+    throw MissingPluginException();
   });
   dynamic result = nothing;
   dynamic error = nothing;
   try {
-    error = await channel.invokeMethod('notImplemented');
+    error = await channel.invokeMethod<dynamic>('notImplemented');
   } on MissingPluginException {
     result = null;
   } catch (e) {

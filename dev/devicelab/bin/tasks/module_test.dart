@@ -1,47 +1,84 @@
-// Copyright (c) 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
+import 'package:flutter_devicelab/framework/apk_utils.dart';
 import 'package:flutter_devicelab/framework/framework.dart';
+import 'package:flutter_devicelab/framework/task_result.dart';
 import 'package:flutter_devicelab/framework/utils.dart';
 import 'package:path/path.dart' as path;
 
+final String gradlew = Platform.isWindows ? 'gradlew.bat' : 'gradlew';
+final String gradlewExecutable = Platform.isWindows ? '.\\$gradlew' : './$gradlew';
+final String fileReadWriteMode = Platform.isWindows ? 'rw-rw-rw-' : 'rw-r--r--';
+final String platformLineSep = Platform.isWindows ? '\r\n': '\n';
+
 /// Tests that the Flutter module project template works and supports
 /// adding Flutter to an existing Android app.
-Future<Null> main() async {
+Future<void> main() async {
   await task(() async {
 
     section('Find Java');
 
-    final String javaHome = await findJavaHome();
+    final String? javaHome = await findJavaHome();
     if (javaHome == null)
-      return new TaskResult.failure('Could not find Java');
+      return TaskResult.failure('Could not find Java');
     print('\nUsing JAVA_HOME=$javaHome');
 
     section('Create Flutter module project');
 
     final Directory tempDir = Directory.systemTemp.createTempSync('flutter_module_test.');
+    final Directory projectDir = Directory(path.join(tempDir.path, 'hello'));
     try {
       await inDirectory(tempDir, () async {
         await flutter(
           'create',
-          options: <String>['--org', 'io.flutter.devicelab', '-t', 'module', 'hello'],
+          options: <String>['--org', 'io.flutter.devicelab', '--template=module', 'hello'],
         );
       });
 
-      section('Add plugins');
+      section('Add read-only asset');
 
-      final File pubspec = new File(path.join(tempDir.path, 'hello', 'pubspec.yaml'));
+      final File readonlyTxtAssetFile = await File(path.join(
+        projectDir.path,
+        'assets',
+        'read-only.txt'
+      ))
+      .create(recursive: true);
+
+      if (!exists(readonlyTxtAssetFile)) {
+        return TaskResult.failure('Failed to create read-only asset');
+      }
+
+      if (!Platform.isWindows) {
+        await exec('chmod', <String>[
+          '444',
+          readonlyTxtAssetFile.path
+        ]);
+      }
+
+      final File pubspec = File(path.join(projectDir.path, 'pubspec.yaml'));
       String content = await pubspec.readAsString();
       content = content.replaceFirst(
-        '\ndependencies:\n',
-        '\ndependencies:\n  battery:\n  package_info:\n',
+        '$platformLineSep  # assets:$platformLineSep',
+        '$platformLineSep  assets:$platformLineSep    - assets/read-only.txt$platformLineSep',
       );
       await pubspec.writeAsString(content, flush: true);
-      await inDirectory(new Directory(path.join(tempDir.path, 'hello')), () async {
+
+      section('Add plugins');
+
+      content = await pubspec.readAsString();
+      content = content.replaceFirst(
+        '${platformLineSep}dependencies:$platformLineSep',
+        '${platformLineSep}dependencies:$platformLineSep  device_info: 0.4.1$platformLineSep  package_info: 0.4.0+9$platformLineSep',
+      );
+      await pubspec.writeAsString(content, flush: true);
+      await inDirectory(projectDir, () async {
         await flutter(
           'packages',
           options: <String>['get'],
@@ -50,17 +87,16 @@ Future<Null> main() async {
 
       section('Build Flutter module library archive');
 
-      await inDirectory(new Directory(path.join(tempDir.path, 'hello', '.android')), () async {
+      await inDirectory(Directory(path.join(projectDir.path, '.android')), () async {
         await exec(
-          './gradlew',
+          gradlewExecutable,
           <String>['flutter:assembleDebug'],
           environment: <String, String>{ 'JAVA_HOME': javaHome },
         );
       });
 
-      final bool aarBuilt = exists(new File(path.join(
-        tempDir.path,
-        'hello',
+      final bool aarBuilt = exists(File(path.join(
+        projectDir.path,
         '.android',
         'Flutter',
         'build',
@@ -70,21 +106,20 @@ Future<Null> main() async {
       )));
 
       if (!aarBuilt) {
-        return new TaskResult.failure('Failed to build .aar');
+        return TaskResult.failure('Failed to build .aar');
       }
 
       section('Build ephemeral host app');
 
-      await inDirectory(new Directory(path.join(tempDir.path, 'hello')), () async {
+      await inDirectory(projectDir, () async {
         await flutter(
           'build',
           options: <String>['apk'],
         );
       });
 
-      final bool ephemeralHostApkBuilt = exists(new File(path.join(
-        tempDir.path,
-        'hello',
+      final bool ephemeralHostApkBuilt = exists(File(path.join(
+        projectDir.path,
         'build',
         'host',
         'outputs',
@@ -94,36 +129,35 @@ Future<Null> main() async {
       )));
 
       if (!ephemeralHostApkBuilt) {
-        return new TaskResult.failure('Failed to build ephemeral host .apk');
+        return TaskResult.failure('Failed to build ephemeral host .apk');
       }
 
       section('Clean build');
 
-      await inDirectory(new Directory(path.join(tempDir.path, 'hello')), () async {
+      await inDirectory(projectDir, () async {
         await flutter('clean');
       });
 
-      section('Materialize host app');
+      section('Make Android host app editable');
 
-      await inDirectory(new Directory(path.join(tempDir.path, 'hello')), () async {
+      await inDirectory(projectDir, () async {
         await flutter(
-          'materialize',
+          'make-host-app-editable',
           options: <String>['android'],
         );
       });
 
-      section('Build materialized host app');
+      section('Build editable host app');
 
-      await inDirectory(new Directory(path.join(tempDir.path, 'hello')), () async {
+      await inDirectory(projectDir, () async {
         await flutter(
           'build',
           options: <String>['apk'],
         );
       });
 
-      final bool materializedHostApkBuilt = exists(new File(path.join(
-        tempDir.path,
-        'hello',
+      final bool editableHostApkBuilt = exists(File(path.join(
+        projectDir.path,
         'build',
         'host',
         'outputs',
@@ -132,36 +166,54 @@ Future<Null> main() async {
         'app-release.apk',
       )));
 
-      if (!materializedHostApkBuilt) {
-        return new TaskResult.failure('Failed to build materialized host .apk');
+      if (!editableHostApkBuilt) {
+        return TaskResult.failure('Failed to build editable host .apk');
       }
 
-      section('Add to Android app');
+      section('Add to existing Android app');
 
-      final Directory hostApp = new Directory(path.join(tempDir.path, 'hello_host_app'));
+      final Directory hostApp = Directory(path.join(tempDir.path, 'hello_host_app'));
       mkdir(hostApp);
       recursiveCopy(
-        new Directory(path.join(flutterDirectory.path, 'dev', 'integration_tests', 'android_host_app')),
+        Directory(
+          path.join(
+            flutterDirectory.path,
+            'dev',
+            'integration_tests',
+            'android_host_app_v2_embedding',
+          ),
+        ),
         hostApp,
       );
       copy(
-        new File(path.join(tempDir.path, 'hello', '.android', 'gradlew')),
+        File(path.join(projectDir.path, '.android', gradlew)),
         hostApp,
       );
       copy(
-        new File(path.join(tempDir.path, 'hello', '.android', 'gradle', 'wrapper', 'gradle-wrapper.jar')),
-        new Directory(path.join(hostApp.path, 'gradle', 'wrapper')),
+        File(path.join(projectDir.path, '.android', 'gradle', 'wrapper', 'gradle-wrapper.jar')),
+        Directory(path.join(hostApp.path, 'gradle', 'wrapper')),
       );
 
+      final File analyticsOutputFile = File(path.join(tempDir.path, 'analytics.log'));
+
+      section('Build debug host APK');
+
       await inDirectory(hostApp, () async {
-        await exec('chmod', <String>['+x', 'gradlew']);
-        await exec('./gradlew',
+        if (!Platform.isWindows) {
+          await exec('chmod', <String>['+x', 'gradlew']);
+        }
+        await exec(gradlewExecutable,
           <String>['app:assembleDebug'],
-          environment: <String, String>{ 'JAVA_HOME': javaHome },
+          environment: <String, String>{
+            'JAVA_HOME': javaHome,
+            'FLUTTER_ANALYTICS_LOG_FILE': analyticsOutputFile.path,
+          },
         );
       });
 
-      final bool existingAppBuilt = exists(new File(path.join(
+      section('Check debug APK exists');
+
+      final String debugHostApk = path.join(
         hostApp.path,
         'app',
         'build',
@@ -169,14 +221,161 @@ Future<Null> main() async {
         'apk',
         'debug',
         'app-debug.apk',
-      )));
-
-      if (!existingAppBuilt) {
-        return new TaskResult.failure('Failed to build existing app .apk');
+      );
+      if (!exists(File(debugHostApk))) {
+        return TaskResult.failure('Failed to build debug host APK');
       }
-      return new TaskResult.success(null);
+
+      section('Check files in debug APK');
+
+      checkCollectionContains<String>(<String>[
+        ...flutterAssets,
+        ...debugAssets,
+        ...baseApkFiles,
+      ], await getFilesInApk(debugHostApk));
+
+      section('Check debug AndroidManifest.xml');
+
+      final String androidManifestDebug = await getAndroidManifest(debugHostApk);
+      if (!androidManifestDebug.contains('''
+        <meta-data
+            android:name="flutterProjectType"
+            android:value="module" />''')
+      ) {
+        return TaskResult.failure("Debug host APK doesn't contain metadata: flutterProjectType = module ");
+      }
+
+      final String analyticsOutput = analyticsOutputFile.readAsStringSync();
+      if (!analyticsOutput.contains('cd24: android')
+          || !analyticsOutput.contains('cd25: true')
+          || !analyticsOutput.contains('viewName: assemble')) {
+        return TaskResult.failure(
+          'Building outer app produced the following analytics: "$analyticsOutput" '
+          'but not the expected strings: "cd24: android", "cd25: true" and '
+          '"viewName: assemble"'
+        );
+      }
+
+      section('Check file access modes for read-only asset from Flutter module');
+
+      final String readonlyDebugAssetFilePath = path.joinAll(<String>[
+        hostApp.path,
+        'app',
+        'build',
+        'intermediates',
+        'merged_assets',
+        'debug',
+        'out',
+        'flutter_assets',
+        'assets',
+        'read-only.txt',
+      ]);
+      final File readonlyDebugAssetFile = File(readonlyDebugAssetFilePath);
+      if (!exists(readonlyDebugAssetFile)) {
+        return TaskResult.failure('Failed to copy read-only asset file');
+      }
+
+      String modes = readonlyDebugAssetFile.statSync().modeString();
+      print('\nread-only.txt file access modes = $modes');
+      if (modes != null && modes.compareTo(fileReadWriteMode) != 0) {
+        return TaskResult.failure('Failed to make assets user-readable and writable');
+      }
+
+      section('Build release host APK');
+
+      await inDirectory(hostApp, () async {
+        await exec(gradlewExecutable,
+          <String>['app:assembleRelease'],
+          environment: <String, String>{
+            'JAVA_HOME': javaHome,
+            'FLUTTER_ANALYTICS_LOG_FILE': analyticsOutputFile.path,
+          },
+        );
+      });
+
+      final String releaseHostApk = path.join(
+        hostApp.path,
+        'app',
+        'build',
+        'outputs',
+        'apk',
+        'release',
+        'app-release-unsigned.apk',
+      );
+      if (!exists(File(releaseHostApk))) {
+        return TaskResult.failure('Failed to build release host APK');
+      }
+
+      section('Check files in release APK');
+
+      checkCollectionContains<String>(<String>[
+        ...flutterAssets,
+        ...baseApkFiles,
+        'lib/arm64-v8a/libapp.so',
+        'lib/arm64-v8a/libflutter.so',
+        'lib/armeabi-v7a/libapp.so',
+        'lib/armeabi-v7a/libflutter.so',
+      ], await getFilesInApk(releaseHostApk));
+
+      section('Check the NOTICE file is correct');
+
+      await inDirectory(hostApp, () async {
+        final File apkFile = File(releaseHostApk);
+        final Archive apk = ZipDecoder().decodeBytes(apkFile.readAsBytesSync());
+        // Shouldn't be missing since we already checked it exists above.
+        final ArchiveFile? noticesFile = apk.findFile('assets/flutter_assets/NOTICES.Z');
+
+        final Uint8List licenseData = noticesFile?.content as Uint8List;
+        if (licenseData == null) {
+          return TaskResult.failure('Invalid license file.');
+        }
+        final String licenseString = utf8.decode(gzip.decode(licenseData));
+        if (!licenseString.contains('skia') || !licenseString.contains('Flutter Authors')) {
+          return TaskResult.failure('License content missing.');
+        }
+      });
+
+      section('Check release AndroidManifest.xml');
+
+      final String androidManifestRelease = await getAndroidManifest(debugHostApk);
+      if (!androidManifestRelease.contains('''
+        <meta-data
+            android:name="flutterProjectType"
+            android:value="module" />''')
+      ) {
+        return TaskResult.failure("Release host APK doesn't contain metadata: flutterProjectType = module ");
+      }
+
+      section('Check file access modes for read-only asset from Flutter module');
+
+      final String readonlyReleaseAssetFilePath = path.joinAll(<String>[
+        hostApp.path,
+        'app',
+        'build',
+        'intermediates',
+        'merged_assets',
+        'release',
+        'out',
+        'flutter_assets',
+        'assets',
+        'read-only.txt',
+      ]);
+      final File readonlyReleaseAssetFile = File(readonlyReleaseAssetFilePath);
+      if (!exists(readonlyReleaseAssetFile)) {
+        return TaskResult.failure('Failed to copy read-only asset file');
+      }
+
+      modes = readonlyReleaseAssetFile.statSync().modeString();
+      print('\nread-only.txt file access modes = $modes');
+      if (modes != null && modes.compareTo(fileReadWriteMode) != 0) {
+        return TaskResult.failure('Failed to make assets user-readable and writable');
+      }
+
+      return TaskResult.success(null);
+    } on TaskResult catch (taskResult) {
+      return taskResult;
     } catch (e) {
-      return new TaskResult.failure(e.toString());
+      return TaskResult.failure(e.toString());
     } finally {
       rmTree(tempDir);
     }

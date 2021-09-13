@@ -1,36 +1,37 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 class TestItem extends StatelessWidget {
-  const TestItem({ Key key, this.item, this.width, this.height }) : super(key: key);
+  const TestItem({ Key? key, required this.item, this.width, this.height }) : super(key: key);
   final int item;
-  final double width;
-  final double height;
+  final double? width;
+  final double? height;
   @override
   Widget build(BuildContext context) {
-    return new Container(
+    return Container(
       width: width,
       height: height,
       alignment: Alignment.center,
-      child: new Text('Item $item', textDirection: TextDirection.ltr),
+      child: Text('Item $item', textDirection: TextDirection.ltr),
     );
   }
 }
 
-Widget buildFrame({ int count, double width, double height, Axis scrollDirection }) {
-  return new Directionality(
+Widget buildFrame({ int? count, double? width, double? height, Axis? scrollDirection, Key? prototypeKey }) {
+  return Directionality(
     textDirection: TextDirection.ltr,
-    child: new CustomScrollView(
+    child: CustomScrollView(
       scrollDirection: scrollDirection ?? Axis.vertical,
       slivers: <Widget>[
-        new SliverPrototypeExtentList(
-          prototypeItem: new TestItem(item: -1, width: width, height: height),
-          delegate: new SliverChildBuilderDelegate(
-            (BuildContext context, int index) => new TestItem(item: index),
+        SliverPrototypeExtentList(
+          prototypeItem: TestItem(item: -1, width: width, height: height, key: prototypeKey),
+          delegate: SliverChildBuilderDelegate(
+            (BuildContext context, int index) => TestItem(item: index),
             childCount: count,
           ),
         ),
@@ -109,18 +110,18 @@ void main() {
   });
 
   testWidgets('SliverPrototypeExtentList first item is also the prototype', (WidgetTester tester) async {
-    final List<Widget> items = new List<Widget>.generate(10, (int index) {
-      return new TestItem(key: new ValueKey<int>(index), item: index, height: index == 0 ? 60.0 : null);
+    final List<Widget> items = List<Widget>.generate(10, (int index) {
+      return TestItem(key: ValueKey<int>(index), item: index, height: index == 0 ? 60.0 : null);
     }).toList();
 
     await tester.pumpWidget(
-      new Directionality(
+      Directionality(
         textDirection: TextDirection.ltr,
-        child: new CustomScrollView(
+        child: CustomScrollView(
           slivers: <Widget>[
-            new SliverPrototypeExtentList(
+            SliverPrototypeExtentList(
               prototypeItem: items[0],
-              delegate: new SliverChildBuilderDelegate(
+              delegate: SliverChildBuilderDelegate(
                 (BuildContext context, int index) => items[index],
                 childCount: 10,
               ),
@@ -135,5 +136,19 @@ void main() {
 
     for (int i = 1; i < 10; i += 1)
       expect(find.text('Item $i'), findsOneWidget);
+  });
+
+  testWidgets('SliverPrototypeExtentList prototypeItem paint transform is zero.', (WidgetTester tester) async {
+    // Regression test for https://github.com/flutter/flutter/issues/67117
+    // This test ensures that the SliverPrototypeExtentList does not cause an
+    // assertion error when calculating the paint transform of its prototypeItem.
+    // The paint transform of the prototypeItem should be zero, since it is not visible.
+    final GlobalKey prototypeKey = GlobalKey();
+    await tester.pumpWidget(buildFrame(count: 20, height: 100.0, prototypeKey: prototypeKey));
+
+    final RenderObject scrollView = tester.renderObject(find.byType(CustomScrollView));
+    final RenderObject prototype = prototypeKey.currentContext!.findRenderObject()!;
+
+    expect(prototype.getTransformTo(scrollView), Matrix4.zero());
   });
 }

@@ -1,11 +1,13 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 import 'basic.dart';
-import 'container.dart';
 import 'debug.dart';
 import 'framework.dart';
 import 'gesture_detector.dart';
@@ -29,7 +31,7 @@ import 'transitions.dart';
 class ModalBarrier extends StatelessWidget {
   /// Creates a widget that blocks user interaction.
   const ModalBarrier({
-    Key key,
+    Key? key,
     this.color,
     this.dismissible = true,
     this.semanticsLabel,
@@ -42,7 +44,7 @@ class ModalBarrier extends StatelessWidget {
   ///
   ///  * [ModalRoute.barrierColor], which controls this property for the
   ///    [ModalBarrier] built by [ModalRoute] pages.
-  final Color color;
+  final Color? color;
 
   /// Whether touching the barrier will pop the current route off the [Navigator].
   ///
@@ -55,11 +57,12 @@ class ModalBarrier extends StatelessWidget {
   /// Whether the modal barrier semantics are included in the semantics tree.
   ///
   /// See also:
+  ///
   ///  * [ModalRoute.semanticsDismissible], which controls this property for
   ///    the [ModalBarrier] built by [ModalRoute] pages.
-  final bool barrierSemanticsDismissible;
+  final bool? barrierSemanticsDismissible;
 
-  /// Semantics label used for the barrier if it is [dismissable].
+  /// Semantics label used for the barrier if it is [dismissible].
   ///
   /// The semantics label is read out by accessibility tools (e.g. TalkBack
   /// on Android and VoiceOver on iOS) when the barrier is focused.
@@ -68,38 +71,61 @@ class ModalBarrier extends StatelessWidget {
   ///
   ///  * [ModalRoute.barrierLabel], which controls this property for the
   ///    [ModalBarrier] built by [ModalRoute] pages.
-  final String semanticsLabel;
+  final String? semanticsLabel;
 
   @override
   Widget build(BuildContext context) {
     assert(!dismissible || semanticsLabel == null || debugCheckHasDirectionality(context));
-    final bool semanticsDismissible = dismissible && defaultTargetPlatform != TargetPlatform.android;
+    final bool platformSupportsDismissingBarrier;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+      case TargetPlatform.fuchsia:
+      case TargetPlatform.linux:
+      case TargetPlatform.windows:
+        platformSupportsDismissingBarrier = false;
+        break;
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        platformSupportsDismissingBarrier = true;
+        break;
+    }
+    assert(platformSupportsDismissingBarrier != null);
+    final bool semanticsDismissible = dismissible && platformSupportsDismissingBarrier;
     final bool modalBarrierSemanticsDismissible = barrierSemanticsDismissible ?? semanticsDismissible;
-    return new BlockSemantics(
-      child: new ExcludeSemantics(
+
+    void handleDismiss() {
+      Navigator.maybePop(context);
+    }
+
+    return BlockSemantics(
+      child: ExcludeSemantics(
         // On Android, the back button is used to dismiss a modal. On iOS, some
         // modal barriers are not dismissible in accessibility mode.
         excluding: !semanticsDismissible || !modalBarrierSemanticsDismissible,
-        child: new GestureDetector(
-          onTapDown: (TapDownDetails details) {
+        child: _ModalBarrierGestureDetector(
+          onDismiss: () {
             if (dismissible)
-              Navigator.pop(context);
+              handleDismiss();
+            else
+              SystemSound.play(SystemSoundType.alert);
           },
-          behavior: HitTestBehavior.opaque,
-          child: new Semantics(
+          child: Semantics(
             label: semanticsDismissible ? semanticsLabel : null,
+            onDismiss: semanticsDismissible ? handleDismiss : null,
             textDirection: semanticsDismissible && semanticsLabel != null ? Directionality.of(context) : null,
-            child: new ConstrainedBox(
-              constraints: const BoxConstraints.expand(),
-              child: color == null ? null : new DecoratedBox(
-                decoration: new BoxDecoration(
-                  color: color,
-                )
-              )
-            )
-          )
-        )
-      )
+            child: MouseRegion(
+              cursor: SystemMouseCursors.basic,
+              opaque: true,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints.expand(),
+                child: color == null ? null : ColoredBox(
+                  color: color!,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -123,8 +149,8 @@ class ModalBarrier extends StatelessWidget {
 class AnimatedModalBarrier extends AnimatedWidget {
   /// Creates a widget that blocks user interaction.
   const AnimatedModalBarrier({
-    Key key,
-    Animation<Color> color,
+    Key? key,
+    required Animation<Color?> color,
     this.dismissible = true,
     this.semanticsLabel,
     this.barrierSemanticsDismissible,
@@ -136,7 +162,7 @@ class AnimatedModalBarrier extends AnimatedWidget {
   ///
   ///  * [ModalRoute.barrierColor], which controls this property for the
   ///    [AnimatedModalBarrier] built by [ModalRoute] pages.
-  Animation<Color> get color => listenable;
+  Animation<Color?> get color => listenable as Animation<Color?>;
 
   /// Whether touching the barrier will pop the current route off the [Navigator].
   ///
@@ -146,7 +172,7 @@ class AnimatedModalBarrier extends AnimatedWidget {
   ///    [AnimatedModalBarrier] built by [ModalRoute] pages.
   final bool dismissible;
 
-  /// Semantics label used for the barrier if it is [dismissable].
+  /// Semantics label used for the barrier if it is [dismissible].
   ///
   /// The semantics label is read out by accessibility tools (e.g. TalkBack
   /// on Android and VoiceOver on iOS) when the barrier is focused.
@@ -154,22 +180,123 @@ class AnimatedModalBarrier extends AnimatedWidget {
   ///
   ///  * [ModalRoute.barrierLabel], which controls this property for the
   ///    [ModalBarrier] built by [ModalRoute] pages.
-  final String semanticsLabel;
+  final String? semanticsLabel;
 
   /// Whether the modal barrier semantics are included in the semantics tree.
   ///
   /// See also:
+  ///
   ///  * [ModalRoute.semanticsDismissible], which controls this property for
   ///    the [ModalBarrier] built by [ModalRoute] pages.
-  final bool barrierSemanticsDismissible;
+  final bool? barrierSemanticsDismissible;
 
   @override
   Widget build(BuildContext context) {
-    return new ModalBarrier(
-      color: color?.value,
+    return ModalBarrier(
+      color: color.value,
       dismissible: dismissible,
       semanticsLabel: semanticsLabel,
       barrierSemanticsDismissible: barrierSemanticsDismissible,
+    );
+  }
+}
+
+// Recognizes tap down by any pointer button.
+//
+// It is similar to [TapGestureRecognizer.onTapDown], but accepts any single
+// button, which means the gesture also takes parts in gesture arenas.
+class _AnyTapGestureRecognizer extends BaseTapGestureRecognizer {
+  _AnyTapGestureRecognizer({ Object? debugOwner })
+    : super(debugOwner: debugOwner);
+
+  VoidCallback? onAnyTapUp;
+
+  @protected
+  @override
+  bool isPointerAllowed(PointerDownEvent event) {
+    if (onAnyTapUp == null)
+      return false;
+    return super.isPointerAllowed(event);
+  }
+
+  @protected
+  @override
+  void handleTapDown({PointerDownEvent? down}) {
+    // Do nothing.
+  }
+
+  @protected
+  @override
+  void handleTapUp({PointerDownEvent? down, PointerUpEvent? up}) {
+    onAnyTapUp?.call();
+  }
+
+  @protected
+  @override
+  void handleTapCancel({PointerDownEvent? down, PointerCancelEvent? cancel, String? reason}) {
+    // Do nothing.
+  }
+
+  @override
+  String get debugDescription => 'any tap';
+}
+
+class _ModalBarrierSemanticsDelegate extends SemanticsGestureDelegate {
+  const _ModalBarrierSemanticsDelegate({this.onDismiss});
+
+  final VoidCallback? onDismiss;
+
+  @override
+  void assignSemantics(RenderSemanticsGestureHandler renderObject) {
+    renderObject.onTap = onDismiss;
+  }
+}
+
+
+class _AnyTapGestureRecognizerFactory extends GestureRecognizerFactory<_AnyTapGestureRecognizer> {
+  const _AnyTapGestureRecognizerFactory({this.onAnyTapUp});
+
+  final VoidCallback? onAnyTapUp;
+
+  @override
+  _AnyTapGestureRecognizer constructor() => _AnyTapGestureRecognizer();
+
+  @override
+  void initializer(_AnyTapGestureRecognizer instance) {
+    instance.onAnyTapUp = onAnyTapUp;
+  }
+}
+
+// A GestureDetector used by ModalBarrier. It only has one callback,
+// [onAnyTapDown], which recognizes tap down unconditionally.
+class _ModalBarrierGestureDetector extends StatelessWidget {
+  const _ModalBarrierGestureDetector({
+    Key? key,
+    required this.child,
+    required this.onDismiss,
+  }) : assert(child != null),
+       assert(onDismiss != null),
+       super(key: key);
+
+  /// The widget below this widget in the tree.
+  /// See [RawGestureDetector.child].
+  final Widget child;
+
+  /// Immediately called when an event that should dismiss the modal barrier
+  /// has happened.
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final Map<Type, GestureRecognizerFactory> gestures = <Type, GestureRecognizerFactory>{
+      _AnyTapGestureRecognizer: _AnyTapGestureRecognizerFactory(onAnyTapUp: onDismiss),
+    };
+
+    return RawGestureDetector(
+      gestures: gestures,
+      behavior: HitTestBehavior.opaque,
+      semantics: _ModalBarrierSemanticsDelegate(onDismiss: onDismiss),
+      child: child,
     );
   }
 }

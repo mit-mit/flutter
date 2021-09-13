@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -18,23 +18,23 @@
 class EnumIndex<E> {
   /// Creates an index of [enumValues].
   EnumIndex(List<E> enumValues)
-    : _nameToValue = new Map<String, E>.fromIterable(
+    : _nameToValue = Map<String, E>.fromIterable(
         enumValues,
-        key: _getSimpleName
+        key: _getSimpleName,
       ),
-      _valueToName = new Map<E, String>.fromIterable(
+      _valueToName = Map<E, String>.fromIterable(
         enumValues,
-        value: _getSimpleName
+        value: _getSimpleName,
       );
 
   final Map<String, E> _nameToValue;
   final Map<E, String> _valueToName;
 
   /// Given a [simpleName] finds the corresponding enum value.
-  E lookupBySimpleName(String simpleName) => _nameToValue[simpleName];
+  E lookupBySimpleName(String simpleName) => _nameToValue[simpleName]!;
 
   /// Returns the simple name for [enumValue].
-  String toSimpleName(E enumValue) => _valueToName[enumValue];
+  String toSimpleName(E enumValue) => _valueToName[enumValue]!;
 }
 
 String _getSimpleName(dynamic enumValue) {

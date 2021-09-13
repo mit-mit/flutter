@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -17,6 +17,8 @@
 ///    painting boxes.
 library painting;
 
+export 'dart:ui' show Shadow, PlaceholderAlignment, TextHeightBehavior, TextLeadingDistribution;
+
 export 'src/painting/alignment.dart';
 export 'src/painting/basic_types.dart';
 export 'src/painting/beveled_rectangle_border.dart';
@@ -30,6 +32,7 @@ export 'src/painting/box_shadow.dart';
 export 'src/painting/circle_border.dart';
 export 'src/painting/clip.dart';
 export 'src/painting/colors.dart';
+export 'src/painting/continuous_rectangle_border.dart';
 export 'src/painting/debug.dart';
 export 'src/painting/decoration.dart';
 export 'src/painting/decoration_image.dart';
@@ -43,12 +46,16 @@ export 'src/painting/image_decoder.dart';
 export 'src/painting/image_provider.dart';
 export 'src/painting/image_resolution.dart';
 export 'src/painting/image_stream.dart';
+export 'src/painting/inline_span.dart';
 export 'src/painting/matrix_utils.dart';
 export 'src/painting/notched_shapes.dart';
 export 'src/painting/paint_utilities.dart';
+export 'src/painting/placeholder_span.dart';
 export 'src/painting/rounded_rectangle_border.dart';
+export 'src/painting/shader_warm_up.dart';
 export 'src/painting/shape_decoration.dart';
 export 'src/painting/stadium_border.dart';
+export 'src/painting/strut_style.dart';
 export 'src/painting/text_painter.dart';
 export 'src/painting/text_span.dart';
 export 'src/painting/text_style.dart';

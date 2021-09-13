@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -23,7 +23,7 @@ class OrderPainter extends CustomPainter {
   bool shouldRepaint(OrderPainter old) => false;
 }
 
-Widget log(int index) => new CustomPaint(painter: new OrderPainter(index));
+Widget log(int index) => CustomPaint(painter: OrderPainter(index));
 
 void main() {
   // NO DIRECTION
@@ -35,20 +35,20 @@ void main() {
     const Key child1Key = Key('child1');
     const Key child2Key = Key('child2');
 
-    final FlutterExceptionHandler oldHandler = FlutterError.onError;
+    final FlutterExceptionHandler? oldHandler = FlutterError.onError;
     dynamic exception;
     FlutterError.onError = (FlutterErrorDetails details) {
       exception ??= details.exception;
     };
 
     // Default is MainAxisAlignment.start so this should fail, asking for a direction.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Expanded(child: new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2))),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          Expanded(child: SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2))),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -66,20 +66,20 @@ void main() {
     const Key child1Key = Key('child1');
     const Key child2Key = Key('child2');
 
-    final FlutterExceptionHandler oldHandler = FlutterError.onError;
+    final FlutterExceptionHandler? oldHandler = FlutterError.onError;
     dynamic exception;
     FlutterError.onError = (FlutterErrorDetails details) {
       exception ??= details.exception;
     };
 
     // Default is MainAxisAlignment.start so this should fail too.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -96,20 +96,20 @@ void main() {
     const Key child0Key = Key('child0');
     const Key child1Key = Key('child1');
 
-    final FlutterExceptionHandler oldHandler = FlutterError.onError;
+    final FlutterExceptionHandler? oldHandler = FlutterError.onError;
     dynamic exception;
     FlutterError.onError = (FlutterErrorDetails details) {
       exception ??= details.exception;
     };
 
     // More than one child, so it's not clear what direction to lay out in: should fail.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
         ],
       ),
     ));
@@ -127,21 +127,21 @@ void main() {
     const Key child1Key = Key('child1');
     const Key child2Key = Key('child2');
 
-    final FlutterExceptionHandler oldHandler = FlutterError.onError;
+    final FlutterExceptionHandler? oldHandler = FlutterError.onError;
     dynamic exception;
     FlutterError.onError = (FlutterErrorDetails details) {
       exception ??= details.exception;
     };
 
     // No direction so this should fail, asking for a direction.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.end,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -159,21 +159,21 @@ void main() {
     const Key child1Key = Key('child1');
     const Key child2Key = Key('child2');
 
-    final FlutterExceptionHandler oldHandler = FlutterError.onError;
+    final FlutterExceptionHandler? oldHandler = FlutterError.onError;
     dynamic exception;
     FlutterError.onError = (FlutterErrorDetails details) {
       exception ??= details.exception;
     };
 
     // More than one child, so it's not clear what direction to lay out in: should fail.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -192,22 +192,22 @@ void main() {
     const Key child2Key = Key('child2');
     const Key child3Key = Key('child3');
 
-    final FlutterExceptionHandler oldHandler = FlutterError.onError;
+    final FlutterExceptionHandler? oldHandler = FlutterError.onError;
     dynamic exception;
     FlutterError.onError = (FlutterErrorDetails details) {
       exception ??= details.exception;
     };
 
     // More than one child, so it's not clear what direction to lay out in: should fail.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
-          new Container(key: child3Key, width: 100.0, height: 100.0, child: log(4)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child3Key, width: 100.0, height: 100.0, child: log(4)),
         ],
       ),
     ));
@@ -225,21 +225,21 @@ void main() {
     const Key child1Key = Key('child1');
     const Key child2Key = Key('child2');
 
-    final FlutterExceptionHandler oldHandler = FlutterError.onError;
+    final FlutterExceptionHandler? oldHandler = FlutterError.onError;
     dynamic exception;
     FlutterError.onError = (FlutterErrorDetails details) {
       exception ??= details.exception;
     };
 
     // More than one child, so it's not clear what direction to lay out in: should fail.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          new Container(key: child0Key, width: 200.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 200.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 200.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 200.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 200.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 200.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -256,20 +256,20 @@ void main() {
     const Key child0Key = Key('child0');
     const Key child1Key = Key('child1');
 
-    final FlutterExceptionHandler oldHandler = FlutterError.onError;
+    final FlutterExceptionHandler? oldHandler = FlutterError.onError;
     dynamic exception;
     FlutterError.onError = (FlutterErrorDetails details) {
       exception ??= details.exception;
     };
 
     // Default is MainAxisAlignment.start so this should fail, asking for a direction.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 150.0, height: 100.0, child: log(2)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 150.0, height: 100.0, child: log(2)),
         ],
       ),
     ));
@@ -284,15 +284,15 @@ void main() {
     OrderPainter.log.clear();
     const Key childKey = Key('childKey');
 
-    await tester.pumpWidget(new Center(
-      child: new Container(
+    await tester.pumpWidget(Center(
+      child: SizedBox(
         width: 0.0,
         height: 0.0,
-        child: new Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            new Container(
+          children: const <Widget>[
+            SizedBox(
               key: childKey,
               width: 100.0,
               height: 100.0,
@@ -320,14 +320,14 @@ void main() {
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // Default is MainAxisAlignment.start so children so the children's
     // left edges should be at 0, 100, 700, child2's width should be 600
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         textDirection: TextDirection.ltr,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Expanded(child: new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2))),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          Expanded(child: SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2))),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -342,19 +342,19 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(0.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(600.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(100.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(700.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3]);
@@ -370,14 +370,14 @@ void main() {
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // Default is MainAxisAlignment.start so children so the children's
     // left edges should be at 0, 100, 200
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         textDirection: TextDirection.ltr,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -392,19 +392,19 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(0.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(100.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(200.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3]);
@@ -418,14 +418,14 @@ void main() {
 
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // The 100x100 children's left edges should be at 300, 400
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.center,
         textDirection: TextDirection.ltr,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
         ],
       ),
     ));
@@ -440,13 +440,13 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(300.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(400.0));
 
     expect(OrderPainter.log, <int>[1, 2]);
@@ -461,15 +461,15 @@ void main() {
 
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // The 100x100 children's left edges should be at 500, 600, 700.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         textDirection: TextDirection.ltr,
         mainAxisAlignment: MainAxisAlignment.end,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -484,19 +484,19 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(500.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(600.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(700.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3]);
@@ -511,15 +511,15 @@ void main() {
 
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // The 100x100 children's left edges should be at 0, 350, 700
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         textDirection: TextDirection.ltr,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -534,19 +534,19 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(0.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(350.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(700.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3]);
@@ -562,16 +562,16 @@ void main() {
 
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // The 100x100 children's left edges should be at 50, 250, 450, 650
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         textDirection: TextDirection.ltr,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
-          new Container(key: child3Key, width: 100.0, height: 100.0, child: log(4)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child3Key, width: 100.0, height: 100.0, child: log(4)),
         ],
       ),
     ));
@@ -586,25 +586,25 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(50.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(250.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(450.0));
 
     renderBox = tester.renderObject(find.byKey(child3Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(650.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3, 4]);
@@ -619,15 +619,15 @@ void main() {
 
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // The 200x100 children's left edges should be at 50, 300, 550
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         textDirection: TextDirection.ltr,
         children: <Widget>[
-          new Container(key: child0Key, width: 200.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 200.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 200.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 200.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 200.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 200.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -642,19 +642,19 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(200.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(50.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(200.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(300.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(200.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(550.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3]);
@@ -668,14 +668,14 @@ void main() {
 
     // Row with MainAxisSize.min without flexible children shrink wraps.
     // Row's width should be 250, children should be at 0, 100.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisSize: MainAxisSize.min,
         textDirection: TextDirection.ltr,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 150.0, height: 100.0, child: log(2)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 150.0, height: 100.0, child: log(2)),
         ],
       ),
     ));
@@ -690,13 +690,13 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(0.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(150.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(100.0));
 
     expect(OrderPainter.log, <int>[1, 2]);
@@ -706,16 +706,16 @@ void main() {
     OrderPainter.log.clear();
     const Key childKey = Key('childKey');
 
-    await tester.pumpWidget(new Center(
-      child: new Container(
+    await tester.pumpWidget(Center(
+      child: SizedBox(
         width: 0.0,
         height: 0.0,
-        child: new Row(
+        child: Row(
           textDirection: TextDirection.ltr,
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            new Container(
+          children: const <Widget>[
+            SizedBox(
               key: childKey,
               width: 100.0,
               height: 100.0,
@@ -743,14 +743,14 @@ void main() {
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // Default is MainAxisAlignment.start so children so the children's
     // right edges should be at 0, 100, 700 from the right, child2's width should be 600
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         textDirection: TextDirection.rtl,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Expanded(child: new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2))),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          Expanded(child: SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2))),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -765,19 +765,19 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(700.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(600.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(100.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(0.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3]);
@@ -793,14 +793,14 @@ void main() {
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // Default is MainAxisAlignment.start so children so the children's
     // right edges should be at 0, 100, 200 from the right
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         textDirection: TextDirection.rtl,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -815,19 +815,19 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(700.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(600.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(500.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3]);
@@ -841,14 +841,14 @@ void main() {
 
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // The 100x100 children's right edges should be at 300, 400 from the right
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.center,
         textDirection: TextDirection.rtl,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
         ],
       ),
     ));
@@ -863,13 +863,13 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(400.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(300.0));
 
     expect(OrderPainter.log, <int>[1, 2]);
@@ -884,15 +884,15 @@ void main() {
 
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // The 100x100 children's right edges should be at 500, 600, 700 from the right.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         textDirection: TextDirection.rtl,
         mainAxisAlignment: MainAxisAlignment.end,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -907,19 +907,19 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(200.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(100.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(0.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3]);
@@ -934,15 +934,15 @@ void main() {
 
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // The 100x100 children's right edges should be at 0, 350, 700 from the right
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         textDirection: TextDirection.rtl,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -957,19 +957,19 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(700.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(350.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(0.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3]);
@@ -985,16 +985,16 @@ void main() {
 
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // The 100x100 children's right edges should be at 50, 250, 450, 650 from the right
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         textDirection: TextDirection.rtl,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
-          new Container(key: child3Key, width: 100.0, height: 100.0, child: log(4)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 100.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 100.0, height: 100.0, child: log(3)),
+          SizedBox(key: child3Key, width: 100.0, height: 100.0, child: log(4)),
         ],
       ),
     ));
@@ -1009,25 +1009,25 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(650.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(450.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(250.0));
 
     renderBox = tester.renderObject(find.byKey(child3Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(50.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3, 4]);
@@ -1042,15 +1042,15 @@ void main() {
 
     // Default is MainAxisSize.max so the Row should be as wide as the test: 800.
     // The 200x100 children's right edges should be at 50, 300, 550 from the right
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         textDirection: TextDirection.rtl,
         children: <Widget>[
-          new Container(key: child0Key, width: 200.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 200.0, height: 100.0, child: log(2)),
-          new Container(key: child2Key, width: 200.0, height: 100.0, child: log(3)),
+          SizedBox(key: child0Key, width: 200.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 200.0, height: 100.0, child: log(2)),
+          SizedBox(key: child2Key, width: 200.0, height: 100.0, child: log(3)),
         ],
       ),
     ));
@@ -1065,19 +1065,19 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(200.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(550.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(200.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(300.0));
 
     renderBox = tester.renderObject(find.byKey(child2Key));
     expect(renderBox.size.width, equals(200.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(50.0));
 
     expect(OrderPainter.log, <int>[1, 2, 3]);
@@ -1091,14 +1091,14 @@ void main() {
 
     // Row with MainAxisSize.min without flexible children shrink wraps.
     // Row's width should be 250, children should be at 0, 100 from right.
-    await tester.pumpWidget(new Center(
-      child: new Row(
+    await tester.pumpWidget(Center(
+      child: Row(
         key: rowKey,
         mainAxisSize: MainAxisSize.min,
         textDirection: TextDirection.rtl,
         children: <Widget>[
-          new Container(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
-          new Container(key: child1Key, width: 150.0, height: 100.0, child: log(2)),
+          SizedBox(key: child0Key, width: 100.0, height: 100.0, child: log(1)),
+          SizedBox(key: child1Key, width: 150.0, height: 100.0, child: log(2)),
         ],
       ),
     ));
@@ -1113,13 +1113,13 @@ void main() {
     renderBox = tester.renderObject(find.byKey(child0Key));
     expect(renderBox.size.width, equals(100.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(150.0));
 
     renderBox = tester.renderObject(find.byKey(child1Key));
     expect(renderBox.size.width, equals(150.0));
     expect(renderBox.size.height, equals(100.0));
-    boxParentData = renderBox.parentData;
+    boxParentData = renderBox.parentData! as BoxParentData;
     expect(boxParentData.offset.dx, equals(0.0));
 
     expect(OrderPainter.log, <int>[1, 2]);
@@ -1129,16 +1129,16 @@ void main() {
     OrderPainter.log.clear();
     const Key childKey = Key('childKey');
 
-    await tester.pumpWidget(new Center(
-      child: new Container(
+    await tester.pumpWidget(Center(
+      child: SizedBox(
         width: 0.0,
         height: 0.0,
-        child: new Row(
+        child: Row(
           textDirection: TextDirection.rtl,
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            new Container(
+          children: const <Widget>[
+            SizedBox(
               key: childKey,
               width: 100.0,
               height: 100.0,

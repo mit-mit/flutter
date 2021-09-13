@@ -1,10 +1,9 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 const BoxDecoration kBoxDecorationA = BoxDecoration(
   color: Color(0xFFFF0000),
@@ -19,6 +18,8 @@ const BoxDecoration kBoxDecorationC = BoxDecoration(
 );
 
 class TestBuildCounter extends StatelessWidget {
+  const TestBuildCounter({ Key? key }) : super(key: key);
+
   static int buildCount = 0;
 
   @override
@@ -30,13 +31,13 @@ class TestBuildCounter extends StatelessWidget {
 
 
 class FlipWidget extends StatefulWidget {
-  const FlipWidget({ Key key, this.left, this.right }) : super(key: key);
+  const FlipWidget({ Key? key, required this.left, required this.right }) : super(key: key);
 
   final Widget left;
   final Widget right;
 
   @override
-  FlipWidgetState createState() => new FlipWidgetState();
+  FlipWidgetState createState() => FlipWidgetState();
 }
 
 class FlipWidgetState extends State<FlipWidget> {

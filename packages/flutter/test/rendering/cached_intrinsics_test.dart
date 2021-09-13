@@ -1,22 +1,29 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter/rendering.dart';
-import '../flutter_test_alternative.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 class RenderTestBox extends RenderBox {
   double value = 0.0;
-  double next() { value += 1.0; return value; }
-  @override double computeMinIntrinsicWidth(double height) => next();
-  @override double computeMaxIntrinsicWidth(double height) => next();
-  @override double computeMinIntrinsicHeight(double width) => next();
-  @override double computeMaxIntrinsicHeight(double width) => next();
+  double next() {
+    value += 1.0;
+    return value;
+  }
+  @override
+  double computeMinIntrinsicWidth(double height) => next();
+  @override
+  double computeMaxIntrinsicWidth(double height) => next();
+  @override
+  double computeMinIntrinsicHeight(double width) => next();
+  @override
+  double computeMaxIntrinsicHeight(double width) => next();
 }
 
 void main() {
   test('Intrinsics cache', () {
-    final RenderBox test = new RenderTestBox();
+    final RenderBox test = RenderTestBox();
 
     expect(test.getMinIntrinsicWidth(0.0), equals(1.0));
     expect(test.getMinIntrinsicWidth(100.0), equals(2.0));

@@ -1,29 +1,29 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter/widgets.dart';
 
 class LifecycleWatcher extends StatefulWidget {
-  const LifecycleWatcher({ Key key }) : super(key: key);
+  const LifecycleWatcher({ Key? key }) : super(key: key);
 
   @override
-  _LifecycleWatcherState createState() => new _LifecycleWatcherState();
+  State<LifecycleWatcher> createState() => _LifecycleWatcherState();
 }
 
 class _LifecycleWatcherState extends State<LifecycleWatcher>
                              with WidgetsBindingObserver {
-  AppLifecycleState _lastLifecycleState;
+  AppLifecycleState? _lastLifecycleState;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance!.addObserver(this);
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
   }
 
@@ -38,7 +38,7 @@ class _LifecycleWatcherState extends State<LifecycleWatcher>
   Widget build(BuildContext context) {
     if (_lastLifecycleState == null)
       return const Text('This widget has not observed any lifecycle changes.');
-    return new Text('The most recent lifecycle state this widget observed was: $_lastLifecycleState.');
+    return Text('The most recent lifecycle state this widget observed was: $_lastLifecycleState.');
   }
 }
 

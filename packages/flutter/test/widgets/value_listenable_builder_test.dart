@@ -1,33 +1,33 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  SpyStringValueNotifier valueListenable;
-  Widget textBuilderUnderTest;
+  late SpyStringValueNotifier valueListenable;
+  late Widget textBuilderUnderTest;
 
   Widget builderForValueListenable(
-    ValueListenable<String> valueListenable,
+    ValueListenable<String?> valueListenable,
   ) {
-    return new Directionality(
+    return Directionality(
       textDirection: TextDirection.ltr,
-      child: new ValueListenableBuilder<String>(
+      child: ValueListenableBuilder<String?>(
         valueListenable: valueListenable,
-        builder: (BuildContext context, String value, Widget child) {
+        builder: (BuildContext context, String? value, Widget? child) {
           if (value == null)
             return const Placeholder();
-          return new Text(value);
+          return Text(value);
         },
       ),
     );
   }
 
   setUp(() {
-    valueListenable = new SpyStringValueNotifier(null);
+    valueListenable = SpyStringValueNotifier(null);
     textBuilderUnderTest = builderForValueListenable(valueListenable);
   });
 
@@ -38,7 +38,7 @@ void main() {
   });
 
   testWidgets('Widget builds with initial value', (WidgetTester tester) async {
-    valueListenable = new SpyStringValueNotifier('Bachman');
+    valueListenable = SpyStringValueNotifier('Bachman');
 
     await tester.pumpWidget(builderForValueListenable(valueListenable));
 
@@ -65,8 +65,8 @@ void main() {
     await tester.pump();
     expect(find.text('Gilfoyle'), findsOneWidget);
 
-    final ValueListenable<String> differentListenable =
-        new SpyStringValueNotifier('Hendricks');
+    final ValueListenable<String?> differentListenable =
+        SpyStringValueNotifier('Hendricks');
 
     await tester.pumpWidget(builderForValueListenable(differentListenable));
 
@@ -74,15 +74,15 @@ void main() {
     expect(find.text('Hendricks'), findsOneWidget);
   });
 
-  testWidgets('Stops listening to old listenable after chainging listenable', (WidgetTester tester) async {
+  testWidgets('Stops listening to old listenable after changing listenable', (WidgetTester tester) async {
     await tester.pumpWidget(textBuilderUnderTest);
 
     valueListenable.value = 'Gilfoyle';
     await tester.pump();
     expect(find.text('Gilfoyle'), findsOneWidget);
 
-    final ValueListenable<String> differentListenable =
-       new SpyStringValueNotifier('Hendricks');
+    final ValueListenable<String?> differentListenable =
+       SpyStringValueNotifier('Hendricks');
 
     await tester.pumpWidget(builderForValueListenable(differentListenable));
 
@@ -111,8 +111,8 @@ void main() {
   });
 }
 
-class SpyStringValueNotifier extends ValueNotifier<String> {
-  SpyStringValueNotifier(String initialValue) : super(initialValue);
+class SpyStringValueNotifier extends ValueNotifier<String?> {
+  SpyStringValueNotifier(String? initialValue) : super(initialValue);
 
   /// Override for test visibility only.
   @override

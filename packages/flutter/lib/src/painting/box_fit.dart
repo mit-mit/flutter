@@ -1,6 +1,7 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 
 import 'dart:math' as math;
 
@@ -10,8 +11,10 @@ import 'basic_types.dart';
 
 /// How a box should be inscribed into another box.
 ///
-/// See also [applyBoxFit], which applies the sizing semantics of these values
-/// (though not the alignment semantics).
+/// See also:
+///
+///  * [applyBoxFit], which applies the sizing semantics of these values (though
+///    not the alignment semantics).
 enum BoxFit {
   /// Fill the target box by distorting the source's aspect ratio.
   ///
@@ -26,17 +29,26 @@ enum BoxFit {
 
   /// As small as possible while still covering the entire target box.
   ///
+  /// {@template flutter.painting.BoxFit.cover}
+  /// To actually clip the content, use `clipBehavior: Clip.hardEdge` alongside
+  /// this in a [FittedBox].
+  /// {@endtemplate}
+  ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/painting/box_fit_cover.png)
   cover,
 
   /// Make sure the full width of the source is shown, regardless of
   /// whether this means the source overflows the target box vertically.
   ///
+  /// {@macro flutter.painting.BoxFit.cover}
+  ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/painting/box_fit_fitWidth.png)
   fitWidth,
 
   /// Make sure the full height of the source is shown, regardless of
   /// whether this means the source overflows the target box horizontally.
+  ///
+  /// {@macro flutter.painting.BoxFit.cover}
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/painting/box_fit_fitHeight.png)
   fitHeight,
@@ -45,6 +57,8 @@ enum BoxFit {
   /// any portions of the source that lie outside the box.
   ///
   /// The source image is not resized.
+  ///
+  /// {@macro flutter.painting.BoxFit.cover}
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/painting/box_fit_none.png)
   none,
@@ -102,7 +116,7 @@ class FittedSizes {
 /// convenience function, [Alignment.inscribe], for resolving the sizes to
 /// rects, as shown in the example below.
 ///
-/// ## Sample code
+/// {@tool snippet}
 ///
 /// This function paints a [dart:ui.Image] `image` onto the [Rect] `outputRect` on a
 /// [Canvas] `canvas`, using a [Paint] `paint`, applying the [BoxFit] algorithm
@@ -110,13 +124,14 @@ class FittedSizes {
 ///
 /// ```dart
 /// void paintImage(ui.Image image, Rect outputRect, Canvas canvas, Paint paint, BoxFit fit) {
-///   final Size imageSize = new Size(image.width.toDouble(), image.height.toDouble());
+///   final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
 ///   final FittedSizes sizes = applyBoxFit(fit, imageSize, outputRect.size);
 ///   final Rect inputSubrect = Alignment.center.inscribe(sizes.source, Offset.zero & imageSize);
 ///   final Rect outputSubrect = Alignment.center.inscribe(sizes.destination, outputRect);
 ///   canvas.drawImageRect(image, inputSubrect, outputSubrect, paint);
 /// }
 /// ```
+/// {@end-tool}
 ///
 /// See also:
 ///
@@ -137,29 +152,28 @@ FittedSizes applyBoxFit(BoxFit fit, Size inputSize, Size outputSize) {
     case BoxFit.contain:
       sourceSize = inputSize;
       if (outputSize.width / outputSize.height > sourceSize.width / sourceSize.height)
-        destinationSize = new Size(sourceSize.width * outputSize.height / sourceSize.height, outputSize.height);
+        destinationSize = Size(sourceSize.width * outputSize.height / sourceSize.height, outputSize.height);
       else
-        destinationSize = new Size(outputSize.width, sourceSize.height * outputSize.width / sourceSize.width);
+        destinationSize = Size(outputSize.width, sourceSize.height * outputSize.width / sourceSize.width);
       break;
     case BoxFit.cover:
       if (outputSize.width / outputSize.height > inputSize.width / inputSize.height) {
-        sourceSize = new Size(inputSize.width, inputSize.width * outputSize.height / outputSize.width);
+        sourceSize = Size(inputSize.width, inputSize.width * outputSize.height / outputSize.width);
       } else {
-        sourceSize = new Size(inputSize.height * outputSize.width / outputSize.height, inputSize.height);
+        sourceSize = Size(inputSize.height * outputSize.width / outputSize.height, inputSize.height);
       }
       destinationSize = outputSize;
       break;
     case BoxFit.fitWidth:
-      sourceSize = new Size(inputSize.width, inputSize.width * outputSize.height / outputSize.width);
-      destinationSize = new Size(outputSize.width, sourceSize.height * outputSize.width / sourceSize.width);
+      sourceSize = Size(inputSize.width, inputSize.width * outputSize.height / outputSize.width);
+      destinationSize = Size(outputSize.width, sourceSize.height * outputSize.width / sourceSize.width);
       break;
     case BoxFit.fitHeight:
-      sourceSize = new Size(inputSize.height * outputSize.width / outputSize.height, inputSize.height);
-      destinationSize = new Size(sourceSize.width * outputSize.height / sourceSize.height, outputSize.height);
+      sourceSize = Size(inputSize.height * outputSize.width / outputSize.height, inputSize.height);
+      destinationSize = Size(sourceSize.width * outputSize.height / sourceSize.height, outputSize.height);
       break;
     case BoxFit.none:
-      sourceSize = new Size(math.min(inputSize.width, outputSize.width),
-                            math.min(inputSize.height, outputSize.height));
+      sourceSize = Size(math.min(inputSize.width, outputSize.width), math.min(inputSize.height, outputSize.height));
       destinationSize = sourceSize;
       break;
     case BoxFit.scaleDown:
@@ -167,10 +181,10 @@ FittedSizes applyBoxFit(BoxFit fit, Size inputSize, Size outputSize) {
       destinationSize = inputSize;
       final double aspectRatio = inputSize.width / inputSize.height;
       if (destinationSize.height > outputSize.height)
-        destinationSize = new Size(outputSize.height * aspectRatio, outputSize.height);
+        destinationSize = Size(outputSize.height * aspectRatio, outputSize.height);
       if (destinationSize.width > outputSize.width)
-        destinationSize = new Size(outputSize.width, outputSize.width / aspectRatio);
+        destinationSize = Size(outputSize.width, outputSize.width / aspectRatio);
       break;
   }
-  return new FittedSizes(sourceSize, destinationSize);
+  return FittedSizes(sourceSize, destinationSize);
 }
